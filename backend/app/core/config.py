@@ -32,6 +32,9 @@ class Settings(BaseSettings):
             fallback checks.
         BOLNA_EXECUTION_POLL_MAX_ATTEMPTS: Max attempts for execution polling.
         BOLNA_WEBHOOK_ALLOWED_IPS: Optional comma-separated webhook allowlist.
+        BOLNA_CAPTURE_REAL_PAYLOADS: Whether real webhook/polling payloads
+            should be captured locally as fixtures.
+        BOLNA_CAPTURE_FIXTURES_DIR: Directory for captured live payloads.
         WEBHOOK_BASE_URL: Public webhook base URL for provider callbacks.
         WEBHOOK_MAX_BODY_SIZE_MB: Maximum accepted webhook payload size.
         WEBHOOK_IDEMPOTENCY_TTL_SECONDS: TTL for webhook idempotency keys.
@@ -79,6 +82,8 @@ class Settings(BaseSettings):
     BOLNA_EXECUTION_POLL_INTERVAL_SECONDS: int = 5
     BOLNA_EXECUTION_POLL_MAX_ATTEMPTS: int = 24
     BOLNA_WEBHOOK_ALLOWED_IPS: str = ''
+    BOLNA_CAPTURE_REAL_PAYLOADS: bool = False
+    BOLNA_CAPTURE_FIXTURES_DIR: str = 'backend/tests/fixtures/live'
 
     WEBHOOK_BASE_URL: str = ''
     WEBHOOK_MAX_BODY_SIZE_MB: int = 2

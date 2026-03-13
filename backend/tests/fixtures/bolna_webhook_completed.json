@@ -1,0 +1,10 @@
+{
+  "id": "evt_abc123",
+  "execution_id": "exec_xyz789",
+  "status": "completed",
+  "transcript": "Hello, this is Jane from Acme Corp. I wanted to discuss the enterprise license timeline. We are looking at Q2 for procurement approval. The budget has been allocated and we have internal sign-off from the VP of Engineering.",
+  "duration": 187,
+  "recording_url": "https://storage.bolna.ai/recordings/exec_xyz789.wav",
+  "created_at": "2026-03-13T14:30:00Z",
+  "updated_at": "2026-03-13T14:33:07Z"
+}

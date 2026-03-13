@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_user
+from app.api.deps import get_client_ip, get_current_user
 from app.core.config import get_settings
 from app.db.session import get_db_session
 from app.models.user import User
@@ -14,24 +14,6 @@ from app.schemas.auth import LoginRequest, TokenResponse, UserMe
 from app.services.auth.service import authenticate_user
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
-
-
-def get_client_ip(request: Request) -> str:
-    """Return the best available client IP for auth rate limiting."""
-    settings = get_settings()
-    if settings.TRUST_PROXY_HEADERS:
-        forwarded_for = request.headers.get('x-forwarded-for')
-        if forwarded_for:
-            return forwarded_for.split(',')[0].strip()
-
-        real_ip = request.headers.get('x-real-ip')
-        if real_ip:
-            return real_ip.strip()
-
-    if request.client is not None:
-        return request.client.host
-
-    return 'unknown'
 
 
 @router.post("/login", response_model=TokenResponse)

@@ -34,6 +34,13 @@ class AuthorizationError(DealGraphError):
         super().__init__(message, status.HTTP_403_FORBIDDEN)
 
 
+class NotFoundError(DealGraphError):
+    """Raised when a requested resource does not exist."""
+
+    def __init__(self, message: str = "Resource not found.") -> None:
+        super().__init__(message, status.HTTP_404_NOT_FOUND)
+
+
 class RateLimitError(DealGraphError):
     """Raised when a client exceeds the allowed request rate."""
 

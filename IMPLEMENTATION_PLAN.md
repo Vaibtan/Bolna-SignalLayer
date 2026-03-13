@@ -98,19 +98,19 @@ Goal: establish the project skeleton and local developer workflow.
 
 Checklist:
 
-- [ ] Create backend and frontend workspace structure
-- [ ] Add multi-stage Dockerfiles for `api`, `worker`, and `web`
-- [ ] Add `docker-compose.yml` for `web`, `api`, `worker`, `postgres`, `redis`, and `proxy`
-- [ ] Add `.env.example` from the PRD environment section
-- [ ] Set up Python dependency management and JS package management
-- [ ] Add formatting, linting, and test commands for both backend and frontend
-- [ ] Add a root `README.md` with local startup instructions
+- [x] Create backend and frontend workspace structure
+- [x] Add multi-stage Dockerfiles for `api`, `worker`, and `web`
+- [x] Add `docker-compose.yml` for `web`, `api`, `worker`, `postgres`, `redis`, and `proxy`
+- [x] Add `.env.example` from the PRD environment section
+- [x] Set up Python dependency management and JS package management
+- [x] Add formatting, linting, and test commands for both backend and frontend
+- [x] Add a root `README.md` with local startup instructions
 
 Exit criteria:
 
-- [ ] `docker compose up` boots all core services locally
-- [ ] Frontend and backend health endpoints are reachable
-- [ ] Team can start the app from a clean checkout
+- [x] `docker compose up` boots all core services locally
+- [x] Frontend and backend health endpoints are reachable
+- [x] Team can start the app from a clean checkout
 
 ## Phase 1: Backend Foundation
 
@@ -118,24 +118,24 @@ Goal: create the backend runtime foundation before any business logic.
 
 Checklist:
 
-- [ ] Implement backend config loader from environment variables
-- [ ] Configure FastAPI app, dependency injection, CORS, and health endpoints
-- [ ] Configure SQLAlchemy async engine and session management
-- [ ] Configure Alembic
-- [ ] Configure Redis client and Dramatiq worker setup
-- [ ] Configure Dramatiq middleware baseline, including `Retries`
-- [ ] Implement the worker async boundary explicitly: Dramatiq actors remain sync wrappers and call async service entrypoints via `asyncio.run(...)`
-- [ ] Define broker dead-letter retention behavior and exhausted-retry handling strategy
-- [ ] Add an `on_retry_exhausted` path or equivalent failure sink for jobs that exceed retry policy
-- [ ] Add structured logging with request IDs and job IDs
-- [ ] Add error middleware and consistent API error shape
+- [x] Implement backend config loader from environment variables
+- [x] Configure FastAPI app, dependency injection, CORS, and health endpoints
+- [x] Configure SQLAlchemy async engine and session management
+- [x] Configure Alembic
+- [x] Configure Redis client and Dramatiq worker setup
+- [x] Configure Dramatiq middleware baseline, including `Retries`
+- [x] Implement the worker async boundary explicitly: Dramatiq actors remain sync wrappers and call async service entrypoints via `asyncio.run(...)`
+- [x] Define broker dead-letter retention behavior and exhausted-retry handling strategy
+- [x] Add an `on_retry_exhausted` path or equivalent failure sink for jobs that exceed retry policy
+- [x] Add structured logging with request IDs and job IDs
+- [x] Add error middleware and consistent API error shape
 
 Exit criteria:
 
-- [ ] Backend starts cleanly
-- [ ] DB connection, Redis connection, and readiness checks work
-- [ ] A sample background job can be enqueued and executed
-- [ ] A sample failing job retries with backoff and lands in the dead-letter path after exhausting retries
+- [x] Backend starts cleanly
+- [x] DB connection, Redis connection, and readiness checks work
+- [x] A sample background job can be enqueued and executed
+- [x] A sample failing job retries with backoff and lands in the dead-letter path after exhausting retries
 
 ## Phase 2: Auth and Organization Bootstrap
 
@@ -143,19 +143,19 @@ Goal: secure the app enough for V1 and create the seeded org/user path.
 
 Checklist:
 
-- [ ] Implement `Organization` and `User` models
-- [ ] Add password hashing and login flow
-- [ ] Add session or JWT auth for protected endpoints
-- [ ] Implement `admin` and `operator` roles
-- [ ] Add brute-force protection and auth rate limits
-- [ ] Build frontend `/login` page and login form
-- [ ] Create seed command for org + admin user
+- [x] Implement `Organization` and `User` models
+- [x] Add password hashing and login flow
+- [x] Add session or JWT auth for protected endpoints
+- [x] Implement `admin` and `operator` roles
+- [x] Add brute-force protection and auth rate limits
+- [x] Build frontend `/login` page and login form
+- [x] Create seed command for org + admin user
 
 Exit criteria:
 
-- [ ] User can log in and access protected routes
-- [ ] Failed login throttling works
-- [ ] Seeded admin user can access the app after fresh setup
+- [x] User can log in and access protected routes
+- [x] Failed login throttling works
+- [x] Seeded admin user can access the app after fresh setup
 
 ## Phase 3: Core Domain Models and CRUD
 
@@ -163,20 +163,20 @@ Goal: make deals and stakeholders fully manageable before call flows.
 
 Checklist:
 
-- [ ] Implement models and migrations for `Deal`, `Stakeholder`, `CallSession`, and `CallEvent`
-- [ ] Add service layer for deal CRUD
-- [ ] Add service layer for stakeholder CRUD
-- [ ] Implement `POST/GET/PATCH` deal endpoints
-- [ ] Implement stakeholder endpoints
-- [ ] Add frontend pages for deal list and deal workspace shell
-- [ ] Add create deal and add stakeholder UI flows
-- [ ] Add seed demo deal and stakeholders
+- [x] Implement models and migrations for `Deal`, `Stakeholder`, `CallSession`, and `CallEvent`
+- [x] Add service layer for deal CRUD
+- [x] Add service layer for stakeholder CRUD
+- [x] Implement `POST/GET/PATCH` deal endpoints
+- [x] Implement stakeholder endpoints
+- [x] Add frontend pages for deal list and deal workspace shell
+- [x] Add create deal and add stakeholder UI flows
+- [x] Add seed demo deal and stakeholders
 
 Exit criteria:
 
-- [ ] User can create a deal
-- [ ] User can add/edit stakeholders
-- [ ] Deal workspace renders seeded and user-created records
+- [x] User can create a deal
+- [x] User can add/edit stakeholders
+- [x] Deal workspace renders seeded and user-created records
 
 ## Phase 4: Call Initiation and Bolna Adapter
 
@@ -184,22 +184,22 @@ Goal: support real outbound Bolna calls from the app.
 
 Checklist:
 
-- [ ] Implement Bolna adapter interface
-- [ ] Implement call initiation API
-- [ ] Create `CallSession(status=initiating)` before provider call
-- [ ] Build `user_data` payload from current deal and stakeholder context
-- [ ] Enforce context caps: `deal_context <= 3 sentences`, `open_questions <= 2`
-- [ ] For `known_context`, use the latest `ExtractionSnapshot` summary if available; add memory-powered retrieval in Phase 11
-- [ ] Persist provider request/response metadata
-- [ ] Add rate limiting to call initiation endpoint
-- [ ] Build frontend "Call with AI" modal
-- [ ] Add UI states for initiation success, failure, and throttle response
+- [x] Implement Bolna adapter interface
+- [x] Implement call initiation API
+- [x] Create `CallSession(status=initiating)` before provider call
+- [x] Build `user_data` payload from current deal and stakeholder context
+- [x] Enforce context caps: `deal_context <= 3 sentences`, `open_questions <= 2`
+- [x] For `known_context`, use the latest `ExtractionSnapshot` summary if available; add memory-powered retrieval in Phase 11
+- [x] Persist provider request/response metadata
+- [x] Add rate limiting to call initiation endpoint
+- [x] Build frontend "Call with AI" modal
+- [x] Add UI states for initiation success, failure, and throttle response
 
 Exit criteria:
 
 - [ ] User can trigger a real outbound call to a configured phone number
-- [ ] Duplicate or over-frequent call attempts are blocked safely
-- [ ] Call session record is created even when provider initiation fails
+- [x] Duplicate or over-frequent call attempts are blocked safely
+- [x] Call session record is created even when provider initiation fails
 
 ## Phase 5: Webhook Ingestion, Idempotency, and Read Models
 
@@ -207,23 +207,23 @@ Goal: make provider events durable, replayable, and safe under duplicate deliver
 
 Checklist:
 
-- [ ] Implement `POST /api/webhooks/bolna`
-- [ ] Persist raw webhook payloads before heavy processing
-- [ ] Add Redis-backed webhook idempotency key with 24-hour TTL
-- [ ] Support fallback idempotency key generation from execution ID + status + payload hash
-- [ ] Implement a shared `process_bolna_event(raw_payload, source=\"webhook\"|\"polling\")` ingestion entry point
-- [ ] Normalize Bolna status values into internal event types
-- [ ] Update `CallSession` projection from normalized events
-- [ ] Add polling fallback for execution status and transcript retrieval
-- [ ] Feed polling results through the same idempotency and normalization path as webhook payloads
+- [x] Implement `POST /api/webhooks/bolna`
+- [x] Persist raw webhook payloads before heavy processing
+- [x] Add Redis-backed webhook idempotency key with 24-hour TTL
+- [x] Support fallback idempotency key generation from execution ID + status + payload hash
+- [x] Implement a shared `process_bolna_event(raw_payload, source=\"webhook\"|\"polling\")` ingestion entry point
+- [x] Normalize Bolna status values into internal event types
+- [x] Update `CallSession` projection from normalized events
+- [x] Add polling fallback for execution status and transcript retrieval
+- [x] Feed polling results through the same idempotency and normalization path as webhook payloads
 - [ ] Capture at least one real webhook payload and one real polling response for fixture-based tests
-- [ ] Add integration tests for duplicate terminal webhook delivery
+- [x] Add integration tests for duplicate terminal webhook delivery
 
 Exit criteria:
 
-- [ ] Duplicate webhooks do not create duplicate downstream work
-- [ ] Call state transitions persist correctly
-- [ ] Polling fallback can recover missed webhook state
+- [x] Duplicate webhooks do not create duplicate downstream work
+- [x] Call state transitions persist correctly
+- [x] Polling fallback can recover missed webhook state
 
 ## Phase 6: Realtime Delivery and Frontend Resilience
 
@@ -394,13 +394,13 @@ Exit criteria:
 
 Apply these in every phase:
 
-- [ ] Add or update migrations with each schema change
-- [ ] Add tests for the new behavior before moving to the next phase
-- [ ] Update `.env.example` when config changes
-- [ ] Keep seed data compatible with the current schema
-- [ ] Keep raw provider payloads for debugging
-- [ ] Preserve append-only event and snapshot history
-- [ ] Do not hide failures behind silent retries
+- [x] Add or update migrations with each schema change
+- [x] Add tests for the new behavior before moving to the next phase
+- [x] Update `.env.example` when config changes
+- [x] Keep seed data compatible with the current schema
+- [x] Keep raw provider payloads for debugging
+- [x] Preserve append-only event and snapshot history
+- [x] Do not hide failures behind silent retries
 
 ---
 

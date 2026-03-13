@@ -2,14 +2,39 @@
 
 from typing import Annotated
 
-from fastapi import Cookie, Depends, Header
+from fastapi import Cookie, Depends, Header, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.exceptions import AuthenticationError, AuthorizationError
 from app.core.security import decode_access_token
 from app.db.session import get_db_session
 from app.models.user import User
+
+
+def get_client_ip(request: Request) -> str:
+    """Return the best available client IP.
+
+    Respects X-Forwarded-For / X-Real-IP when the
+    TRUST_PROXY_HEADERS setting is enabled.
+    """
+    settings = get_settings()
+    if settings.TRUST_PROXY_HEADERS:
+        forwarded_for = request.headers.get(
+            "x-forwarded-for",
+        )
+        if forwarded_for:
+            return forwarded_for.split(",")[0].strip()
+
+        real_ip = request.headers.get("x-real-ip")
+        if real_ip:
+            return real_ip.strip()
+
+    if request.client is not None:
+        return request.client.host
+
+    return "unknown"
 
 
 async def get_current_user(

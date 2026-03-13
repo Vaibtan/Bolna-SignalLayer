@@ -11,13 +11,23 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
 from app.api.auth import router as auth_router
+from app.api.calls import router as calls_router
+from app.api.deals import router as deals_router
+from app.api.stakeholders import router as stakeholders_router
+from app.api.webhooks import router as webhooks_router
+from app.api.ws import router as ws_router
 from app.core.config import get_settings
 from app.core.exceptions import (
     DealGraphError,
     dealgraph_exception_handler,
     global_exception_handler,
 )
-from app.core.logging import setup_logging
+from app.core.logging import (
+    request_context_middleware,
+    setup_logging,
+)
+from app.core.redis import close_redis_client
+from app.services.bolna.adapter import close_bolna_adapter
 
 logger = structlog.get_logger(__name__)
 ExceptionHandler = Callable[[object, Exception], Response | Awaitable[Response]]
@@ -39,8 +49,12 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     setup_logging(settings.LOG_LEVEL)
     logger.info('startup.initiated', environment=settings.ENVIRONMENT)
-    yield
-    logger.info('shutdown.initiated')
+    try:
+        yield
+    finally:
+        await close_bolna_adapter()
+        await close_redis_client()
+        logger.info('shutdown.initiated')
 
 
 app = FastAPI(
@@ -57,6 +71,7 @@ app.add_middleware(
     allow_methods=['*'],
     allow_headers=['*'],
 )
+app.middleware('http')(request_context_middleware)
 
 app.add_exception_handler(Exception, global_exception_handler)
 app.add_exception_handler(
@@ -65,6 +80,11 @@ app.add_exception_handler(
 )
 
 app.include_router(auth_router)
+app.include_router(calls_router)
+app.include_router(deals_router)
+app.include_router(stakeholders_router)
+app.include_router(webhooks_router)
+app.include_router(ws_router)
 
 
 @app.get('/api/health/live', tags=['health'])

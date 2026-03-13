@@ -14,3 +14,13 @@ def get_redis_client() -> Redis:
         get_settings().REDIS_URL,
         decode_responses=True,
     )
+
+
+async def close_redis_client() -> None:
+    """Close the cached Redis client if it has been created."""
+    if get_redis_client.cache_info().currsize == 0:
+        return
+
+    client = get_redis_client()
+    await client.aclose()
+    get_redis_client.cache_clear()

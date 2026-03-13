@@ -1,7 +1,9 @@
 """Shared test configuration and fixtures."""
 
+import json
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -11,6 +13,13 @@ from httpx import ASGITransport, AsyncClient
 from app.core.security import hash_password
 from app.main import app
 from app.models.user import User
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def load_fixture(name: str) -> dict[str, Any]:
+    """Load a JSON test fixture by filename."""
+    return json.loads((FIXTURES / name).read_text())
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -39,15 +48,20 @@ class FakePipeline:
         self.operations.append(('expire', (key, ttl)))
         return self
 
-    async def execute(self) -> None:
+    async def execute(self) -> list[object]:
+        results: list[object] = []
         for operation, value in self.operations:
             if operation == 'incr':
                 key = value
                 current = int(self.redis.store.get(key, '0'))
-                self.redis.store[key] = str(current + 1)
+                new_val = current + 1
+                self.redis.store[key] = str(new_val)
+                results.append(new_val)
             elif operation == 'expire':
                 key, ttl = value
                 self.redis.ttls[key] = ttl
+                results.append(True)
+        return results
 
 
 class FakeRedis:
@@ -62,6 +76,26 @@ class FakeRedis:
 
     async def ttl(self, key: str) -> int:
         return self.ttls.get(key, -1)
+
+    async def set(
+        self,
+        key: str,
+        value: str,
+        nx: bool = False,
+        ex: int | None = None,
+    ) -> bool | None:
+        if nx and key in self.store:
+            return False
+        self.store[key] = value
+        if ex is not None:
+            self.ttls[key] = ex
+        return True
+
+    async def decr(self, key: str) -> int:
+        current = int(self.store.get(key, '0'))
+        next_value = current - 1
+        self.store[key] = str(next_value)
+        return next_value
 
     async def delete(self, key: str) -> None:
         self.store.pop(key, None)
@@ -84,6 +118,22 @@ class FakeResult:
         if self._value is None:
             raise AssertionError('Expected a scalar value, got None.')
         return self._value
+
+
+class FakeScalarsResult:
+    """Stub for select() results with scalars().all() chain."""
+
+    def __init__(self, items: list[Any]) -> None:
+        self._items = items
+
+    def scalar_one_or_none(self) -> Any:
+        return self._items[0] if self._items else None
+
+    def scalars(self) -> 'FakeScalarsResult':
+        return self
+
+    def all(self) -> list[Any]:
+        return self._items
 
 
 class FakeSession:
@@ -118,6 +168,9 @@ class FakeSession:
     async def commit(self) -> None:
         self.committed = True
 
+    async def refresh(self, _instance: Any) -> None:
+        pass
+
     async def rollback(self) -> None:
         self.rolled_back = True
 
@@ -139,9 +192,16 @@ def build_user(
     )
 
 
-async def override_db() -> AsyncIterator[object]:
+async def override_db() -> AsyncIterator[FakeSession]:
     """Provide a dummy DB dependency for route tests."""
-    yield object()
+    yield FakeSession()
+
+
+@pytest.fixture(autouse=True)
+def _clear_dependency_overrides() -> Iterator[None]:
+    """Guarantee app dependency overrides are cleaned up after every test."""
+    yield
+    app.dependency_overrides.clear()
 
 
 @pytest_asyncio.fixture

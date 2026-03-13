@@ -41,7 +41,6 @@ async def test_login_sets_cookie(
     assert 'HttpOnly' in set_cookie
     assert 'Secure' in set_cookie
 
-    app.dependency_overrides.clear()
     get_settings.cache_clear()
 
 
@@ -70,7 +69,6 @@ async def test_login_rate_limit_returns_retry_after_header(
     assert response.status_code == 429
     assert response.headers['Retry-After'] == '33'
 
-    app.dependency_overrides.clear()
 
 
 @pytest.mark.asyncio
@@ -90,4 +88,3 @@ async def test_me_returns_authenticated_user(
     assert response.json()['email'] == 'admin@example.com'
     assert response.json()['role'] == 'admin'
 
-    app.dependency_overrides.clear()
