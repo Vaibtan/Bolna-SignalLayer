@@ -1,0 +1,12 @@
+*/__pycache__
+backend/.mypy_cache
+backend/.pytest_cache
+backend/.ruff_cache
+backend/.venv
+backend/backend.egg-info
+backend/dist
+.mcp.json
+.env
+frontend/.next
+frontend/node_modules
+frontend/package-lock.json
