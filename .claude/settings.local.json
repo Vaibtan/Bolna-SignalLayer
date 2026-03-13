@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:www.bolna.ai)",
+      "WebFetch(domain:docs.bolna.ai)",
+      "Bash(cd \"D:/SWE_DEV_NEW/Bolna-SignalLayer\" && python -c \"\nimport json, sys\nwith open\\(r'C:\\\\Users\\\\hp\\\\.claude\\\\projects\\\\D--SWE-DEV-NEW-Bolna-SignalLayer\\\\d7cd5dea-9ae4-4d0e-a6a7-2b1fad0568d4\\\\tool-results\\\\toolu_01H6B29d5qy16Z7GaqGRxUQs.json', 'r'\\) as f:\n    data = json.load\\(f\\)\nprint\\(data[0]['text'][:15000]\\)\n\")",
+      "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer/backend && uv add \"pydantic[email]>=2.12\")",
+      "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer/backend && uv run ruff check app/ scripts/ 2>&1)",
+      "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer/frontend && npx next lint 2>&1)",
+      "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer/frontend && npx eslint . 2>&1)",
+      "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer/backend && uv run alembic revision --autogenerate -m \"add_organizations_and_users\" 2>&1)",
+      "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer && docker compose ps 2>&1)",
+      "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer && docker compose up -d postgres redis 2>&1)",
+      "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer && docker compose ps postgres redis 2>&1)",
+      "Bash(docker exec:*)",
+      "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer && docker compose down -v postgres 2>&1 && docker compose up -d postgres redis 2>&1)",
+      "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer && docker compose ps postgres 2>&1)",
+      "Bash(netstat -aon 2>/dev/null | grep :5432 || ss -tlnp 2>/dev/null | grep 5432 || echo \"checking with powershell...\" && powershell -Command \"Get-NetTCPConnection -LocalPort 5432 -ErrorAction SilentlyContinue | Select-Object OwningProcess\" 2>&1)",
+      "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer && docker compose down 2>&1)",
+      "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer/backend && uv run alembic upgrade head 2>&1)",
+      "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer/backend && uv run python -m scripts.seed 2>&1)",
+      "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer/backend && uv remove passlib 2>&1)",
+      "Bash(sleep 3 && curl -s -X POST http://localhost:8000/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@dealgraph.local\",\"password\":\"changeme123\"}' -v 2>&1)",
+      "Bash(curl -s -X POST http://localhost:8000/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@dealgraph.dev\",\"password\":\"changeme123\"}' -v 2>&1)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NDY4NDdhNS1kODNjLTRiMDgtOWM2Yy0zMWI3ZDVmM2FjNWQiLCJvcmciOiJkMWQ0M2FhMC0wNGJmLTQ4MDItOTM4Yy1kOWQxOGQ3MzkwMWYiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzMzNDMyNTksImV4cCI6MTc3MzM3MjA1OSwianRpIjoiZTU4ZGNjMTYtM2UxMy00OTZkLTgxZGYtNTFkMmM1MGQ2NTJhIn0.ieuQWDAVuU60x0lirv3uD1DYto21FDioLf0orEGawVQ\" && curl -s http://localhost:8000/api/auth/me --cookie \"access_token=$TOKEN\" 2>&1)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NDY4NDdhNS1kODNjLTRiMDgtOWM2Yy0zMWI3ZDVmM2FjNWQiLCJvcmciOiJkMWQ0M2FhMC0wNGJmLTQ4MDItOTM4Yy1kOWQxOGQ3MzkwMWYiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzMzNDMyNTksImV4cCI6MTc3MzM3MjA1OSwianRpIjoiZTU4ZGNjMTYtM2UxMy00OTZkLTgxZGYtNTFkMmM1MGQ2NTJhIn0.ieuQWDAVuU60x0lirv3uD1DYto21FDioLf0orEGawVQ\" && curl -s http://localhost:8000/api/auth/me -H \"Authorization: Bearer $TOKEN\" 2>&1)",
+      "Bash(curl -s -D - -o /dev/null -X POST http://localhost:8000/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@dealgraph.dev\",\"password\":\"wrong\"}' 2>&1 | head -10)",
+      "Bash(curl -s -D - -o /dev/null -X POST http://localhost:8000/api/auth/logout 2>&1 | head -10)",
+      "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer/frontend && npx next build 2>&1)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//d/SWE_DEV_NEW/Bolna-SignalLayer/**)",
+      "Bash(done)",
+      "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer/backend && uv run ruff check app/ scripts/ tests/ 2>&1)",
+      "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer/backend && uv run pytest tests/ -v 2>&1)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "context7"
+  ]
+}
