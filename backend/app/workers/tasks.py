@@ -235,3 +235,27 @@ def embed_memory_documents(
 ) -> None:
     """Background actor: generate and embed memory docs."""
     asyncio.run(_run_memory(call_session_id))
+
+
+async def _run_transcript_retention() -> None:
+    """Apply transcript retention redaction in the background."""
+    from app.db.session import get_session_factory
+    from app.services.call.service import (
+        apply_transcript_retention,
+    )
+
+    session_factory = get_session_factory()
+
+    async with session_factory() as db:
+        redacted_count = await apply_transcript_retention(db)
+
+    logger.info(
+        "transcript.retention_sweep_completed",
+        redacted_call_count=redacted_count,
+    )
+
+
+@dramatiq.actor(max_retries=1)
+def sweep_transcript_retention() -> None:
+    """Background actor: enforce transcript retention policy."""
+    asyncio.run(_run_transcript_retention())

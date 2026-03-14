@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import abc
+import asyncio
+import random
 import uuid
 from dataclasses import dataclass, field
 from functools import lru_cache
@@ -167,21 +169,39 @@ class BolnaHttpAdapter(BolnaAdapter):
     async def get_execution(
         self, execution_id: str,
     ) -> dict[str, Any]:
-        """GET /executions/{execution_id}."""
-        try:
-            resp = await self._client.get(
-                f"/executions/{execution_id}",
-            )
-        except httpx.HTTPError as exc:
-            logger.error(
-                "bolna.poll_error", error=str(exc),
-            )
-            return {"error": str(exc)}
+        """GET /executions/{execution_id} with 429 backoff."""
+        max_retries = 3
+        for attempt in range(max_retries + 1):
+            try:
+                resp = await self._client.get(
+                    f"/executions/{execution_id}",
+                )
+            except httpx.HTTPError as exc:
+                logger.error(
+                    "bolna.poll_error",
+                    error=str(exc),
+                )
+                return {"error": str(exc)}
 
-        try:
-            return resp.json()  # type: ignore[no-any-return]
-        except Exception:
-            return {"error": resp.text}
+            if resp.status_code == 429 and attempt < max_retries:
+                base = 2 ** attempt
+                jitter = random.uniform(0, base)  # noqa: S311
+                delay = base + jitter
+                logger.warning(
+                    "bolna.poll_rate_limited",
+                    execution_id=execution_id,
+                    attempt=attempt + 1,
+                    backoff=round(delay, 2),
+                )
+                await asyncio.sleep(delay)
+                continue
+
+            try:
+                return resp.json()  # type: ignore[no-any-return]
+            except Exception:
+                return {"error": resp.text}
+
+        return {"error": "Exhausted 429 retries"}
 
 
 class BolnaMockAdapter(BolnaAdapter):

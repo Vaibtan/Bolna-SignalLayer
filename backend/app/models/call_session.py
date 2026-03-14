@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -102,6 +103,11 @@ class CallSession(Base):
         Integer, nullable=True
     )
     recording_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    transcript_redacted: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        server_default=text("false"),
+    )
     provider_metadata_json: Mapped[dict[str, object] | None] = mapped_column(
         JSONB, nullable=True
     )

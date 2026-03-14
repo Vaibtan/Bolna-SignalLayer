@@ -1,5 +1,7 @@
 """Dramatiq broker configuration for worker processes."""
 
+import json
+import time
 from functools import lru_cache
 from typing import Any
 
@@ -41,7 +43,13 @@ class JobContextMiddleware(dramatiq.Middleware):
 
 
 class DeadLetterMiddleware(dramatiq.Middleware):
-    """Log jobs that were skipped after exhausting retry policy."""
+    """Persist and log jobs that exhaust their retry policy.
+
+    Writes failed job metadata to a Redis list for later
+    inspection and replay via admin tooling.
+    """
+
+    _DLQ_KEY = "dealgraph:dead_letter_queue"
 
     def after_skip_message(
         self,
@@ -53,7 +61,33 @@ class DeadLetterMiddleware(dramatiq.Middleware):
             broker=type(broker).__name__,
             message_id=message.message_id,
             actor_name=message.actor_name,
+            args=message.args,
         )
+
+        # Best-effort persist to Redis DLQ.
+        try:
+            import redis as _redis
+
+            settings = get_settings()
+            r = _redis.Redis.from_url(settings.REDIS_URL)
+            entry = json.dumps({
+                "message_id": message.message_id,
+                "actor_name": message.actor_name,
+                "queue_name": message.queue_name,
+                "args": message.args,
+                "kwargs": message.kwargs,
+                "options": message.options,
+                "failed_at": time.time(),
+            })
+            r.lpush(self._DLQ_KEY, entry)
+            # Keep only last 1000 entries.
+            r.ltrim(self._DLQ_KEY, 0, 999)
+            r.close()
+        except Exception:
+            logger.warning(
+                "dead_letter.persist_failed",
+                exc_info=True,
+            )
 
 
 @lru_cache(maxsize=1)
@@ -68,3 +102,14 @@ def configure_broker() -> RedisBroker:
     broker.add_middleware(DeadLetterMiddleware())
     dramatiq.set_broker(broker)
     return broker
+
+
+def get_worker_threads() -> int:
+    """Return the configured max concurrent pipelines.
+
+    The CLI should start Dramatiq with:
+      dramatiq app.workers.tasks --threads N
+    where N is this value.
+    """
+    settings = get_settings()
+    return settings.WORKER_MAX_CONCURRENT_PIPELINES

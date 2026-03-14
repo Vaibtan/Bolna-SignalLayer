@@ -23,6 +23,8 @@ def _get(data: dict[str, Any], *keys: str) -> Any:
 def score_extraction(
     extracted: dict[str, Any],
     stakeholder_count: int,
+    *,
+    has_economic_buyer: bool | None = None,
 ) -> tuple[int, list[str]]:
     """Run all deterministic risk rules.
 
@@ -44,8 +46,10 @@ def score_extraction(
         _add(15, "No committed next step")
 
     # 2. No economic buyer identified.
-    role = _get(extracted, "stakeholder", "role_label")
-    if role != "economic_buyer":
+    if has_economic_buyer is None:
+        role = _get(extracted, "stakeholder", "role_label")
+        has_economic_buyer = role == "economic_buyer"
+    if not has_economic_buyer:
         _add(15, "No economic buyer identified")
 
     # 3. Single-threaded account.

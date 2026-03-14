@@ -33,7 +33,7 @@ services:
     build:
       context: ./backend
       target: runner
-    command: ["dramatiq", "app.workers.tasks"]
+    command: ["python", "-m", "app.workers.run"]
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/dealgraph
       - REDIS_URL=redis://redis:6379/0
@@ -42,6 +42,20 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  maintenance:
+    build:
+      context: ./backend
+      target: runner
+    command: ["python", "-m", "app.workers.maintenance"]
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/dealgraph
+      - REDIS_URL=redis://redis:6379/0
+    env_file:
+      - .env
+    depends_on:
       redis:
         condition: service_healthy
 

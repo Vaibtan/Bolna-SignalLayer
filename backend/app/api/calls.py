@@ -3,6 +3,7 @@
 import uuid
 from typing import Annotated
 
+import structlog
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,6 +20,8 @@ from app.schemas.call import (
 )
 from app.services.bolna.adapter import get_bolna_adapter
 from app.services.call import service as call_svc
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(tags=["calls"])
 
@@ -123,3 +126,27 @@ async def get_call_timeline(
         CallTimelineEventOut.model_validate(e)
         for e in events
     ]
+
+
+@router.delete(
+    "/api/calls/{call_id}/transcript",
+    status_code=204,
+)
+async def redact_transcript(
+    call_id: uuid.UUID,
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> Response:
+    """Redact (delete) transcript utterances for a call."""
+    await call_svc.get_call_session(
+        db=db,
+        org_id=current_user.org_id,
+        call_id=call_id,
+    )
+    await call_svc.redact_call_artifacts(db, call_id)
+    logger.info(
+        "audit.transcript_redacted",
+        call_id=str(call_id),
+        user_id=str(current_user.id),
+    )
+    return Response(status_code=204)

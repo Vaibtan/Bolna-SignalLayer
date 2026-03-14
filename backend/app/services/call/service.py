@@ -2,20 +2,25 @@
 
 import re
 import uuid
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import structlog
 from redis.asyncio import Redis
-from sqlalchemy import select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only
 
 from app.core.config import get_settings
 from app.core.exceptions import NotFoundError, RateLimitError
+from app.models.action_recommendation import ActionRecommendation
 from app.models.call_event import CallEvent
 from app.models.call_session import CallSession
 from app.models.deal import Deal
+from app.models.evidence_anchor import EvidenceAnchor
 from app.models.extraction_snapshot import ExtractionSnapshot
+from app.models.followup_draft import FollowupDraft
+from app.models.memory_document import MemoryDocument
 from app.models.stakeholder import Stakeholder
 from app.models.transcript_utterance import TranscriptUtterance
 from app.services.bolna.adapter import (
@@ -26,6 +31,8 @@ from app.services.bolna.adapter import (
 logger = structlog.get_logger(__name__)
 _SENTENCE_BOUNDARY = re.compile(r"(?<=[.!?])\s+|\n+")
 _TOPIC_BOUNDARY = re.compile(r"[\r\n;]+")
+_REDACTED_TEXT = "[REDACTED]"
+_REDACTED_JSON: dict[str, object] = {"redacted": True}
 
 
 def _user_rate_limit_key(user_id: uuid.UUID) -> str:
@@ -377,6 +384,113 @@ async def get_call_session(
     if cs is None:
         raise NotFoundError("Call session not found.")
     return cs
+
+
+async def _redact_call_artifacts_batch(
+    db: AsyncSession,
+    call_ids: list[uuid.UUID],
+) -> None:
+    """Scrub transcript-derived artifacts for one or more calls."""
+    if not call_ids:
+        return
+
+    await db.execute(
+        delete(TranscriptUtterance).where(
+            TranscriptUtterance.call_session_id.in_(call_ids)
+        )
+    )
+    await db.execute(
+        update(EvidenceAnchor)
+        .where(EvidenceAnchor.call_session_id.in_(call_ids))
+        .values(
+            transcript_utterance_id=None,
+            quote_text=_REDACTED_TEXT,
+        )
+    )
+    await db.execute(
+        update(ExtractionSnapshot)
+        .where(
+            ExtractionSnapshot.call_session_id.in_(call_ids)
+        )
+        .values(
+            extracted_json=_REDACTED_JSON,
+            summary=_REDACTED_TEXT,
+        )
+    )
+    await db.execute(
+        update(MemoryDocument)
+        .where(MemoryDocument.call_session_id.in_(call_ids))
+        .values(
+            content=_REDACTED_TEXT,
+            metadata_json=_REDACTED_JSON,
+            embedding=None,
+        )
+    )
+    await db.execute(
+        update(FollowupDraft)
+        .where(FollowupDraft.call_session_id.in_(call_ids))
+        .values(
+            subject=_REDACTED_TEXT,
+            body_text=_REDACTED_TEXT,
+        )
+    )
+    await db.execute(
+        update(ActionRecommendation)
+        .where(
+            ActionRecommendation.call_session_id.in_(call_ids)
+        )
+        .values(
+            reason=_REDACTED_TEXT,
+            payload_json=_REDACTED_JSON,
+        )
+    )
+    await db.execute(
+        update(CallSession)
+        .where(CallSession.id.in_(call_ids))
+        .values(
+            transcript_redacted=True,
+            recording_url=None,
+            updated_at=func.now(),
+        )
+    )
+
+
+async def redact_call_artifacts(
+    db: AsyncSession,
+    call_id: uuid.UUID,
+) -> None:
+    """Redact transcript-derived artifacts for a single call."""
+    await _redact_call_artifacts_batch(db, [call_id])
+    await db.commit()
+
+
+async def apply_transcript_retention(
+    db: AsyncSession,
+) -> int:
+    """Redact expired transcript artifacts per retention policy."""
+    settings = get_settings()
+    cutoff = datetime.now(timezone.utc) - timedelta(
+        days=settings.TRANSCRIPT_RETENTION_DAYS,
+    )
+    result = await db.execute(
+        select(CallSession.id).where(
+            CallSession.ended_at.is_not(None),
+            CallSession.ended_at < cutoff,
+            CallSession.transcript_redacted.is_(False),
+        )
+    )
+    expired_call_ids = list(result.scalars().all())
+    if not expired_call_ids:
+        return 0
+
+    await _redact_call_artifacts_batch(db, expired_call_ids)
+    await db.commit()
+    logger.info(
+        "transcript.retention_applied",
+        redacted_call_count=len(expired_call_ids),
+        cutoff=cutoff.isoformat(),
+    )
+    return len(expired_call_ids)
 
 
 async def get_call_transcript(

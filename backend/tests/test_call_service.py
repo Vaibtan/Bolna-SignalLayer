@@ -4,7 +4,7 @@ import uuid
 from typing import Any
 
 import pytest
-from conftest import FakeRedis, FakeResult, FakeSession
+from conftest import FakeRedis, FakeResult, FakeScalarsResult, FakeSession
 
 from app.core.exceptions import NotFoundError, RateLimitError
 from app.models.call_session import CallSession
@@ -75,6 +75,26 @@ class CallSession_(FakeSession):
 
     async def execute(self, stmt: object) -> FakeResult:
         return FakeResult(next(self._results, None))
+
+
+class RedactionSession(FakeSession):
+    """Session stub for transcript redaction and retention tests."""
+
+    def __init__(self, results: list[object]) -> None:
+        super().__init__()
+        self._results = iter(results)
+        self.executed: list[object] = []
+        self.commit_count = 0
+
+    async def execute(self, stmt: object) -> object:
+        self.executed.append(stmt)
+        value = next(self._results, None)
+        if isinstance(value, list):
+            return FakeScalarsResult(value)
+        return FakeResult(value)
+
+    async def commit(self) -> None:
+        self.commit_count += 1
 
 
 @pytest.mark.asyncio
@@ -417,3 +437,42 @@ async def test_context_caps_and_known_context_from_extraction() -> None:
     assert user_data['known_context'] == (
         'Latest summary one. Latest summary two.'
     )
+
+
+@pytest.mark.asyncio
+async def test_redact_call_artifacts_commits() -> None:
+    call_id = uuid.uuid4()
+    session = RedactionSession(results=[None] * 7)
+
+    await call_svc.redact_call_artifacts(
+        session,  # type: ignore[arg-type]
+        call_id,
+    )
+
+    assert session.commit_count == 1
+    assert len(session.executed) == 7
+
+
+@pytest.mark.asyncio
+async def test_apply_transcript_retention_redacts_expired_calls(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    expired_call_id = uuid.uuid4()
+    session = RedactionSession(
+        results=[[expired_call_id], None, None, None, None, None, None, None],
+    )
+
+    class _Settings:
+        TRANSCRIPT_RETENTION_DAYS = 30
+
+    monkeypatch.setattr(
+        call_svc, 'get_settings', lambda: _Settings(),
+    )
+
+    count = await call_svc.apply_transcript_retention(
+        session,  # type: ignore[arg-type]
+    )
+
+    assert count == 1
+    assert session.commit_count == 1
+    assert len(session.executed) == 8

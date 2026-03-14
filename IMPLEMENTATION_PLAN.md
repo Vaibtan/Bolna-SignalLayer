@@ -350,21 +350,21 @@ Goal: make the system resilient enough for real calls and demo recording.
 
 Checklist:
 
-- [ ] Harden auth rate limits with Redis-backed counters, configurable lockouts, and observability
-- [ ] Harden call initiation throttles with stakeholder cooldowns, admin overrides, and observability
-- [ ] Add request size guard for webhook endpoint
-- [ ] Add provider `429` backoff with jitter
-- [ ] Bound worker concurrency
-- [ ] Implement application-level dead-letter inspection, replay flow, and observability for exhausted jobs
-- [ ] Add audit logging for manual edits
-- [ ] Add retention and redaction controls for transcripts
-- [ ] Add structured log fields for webhook ID, deal ID, call ID, and job ID
+- [x] Harden auth rate limits with Redis-backed counters, configurable lockouts, and observability
+- [x] Harden call initiation throttles with stakeholder cooldowns, admin overrides, and observability
+- [x] Add request size guard for webhook endpoint
+- [x] Add provider `429` backoff with jitter
+- [x] Bound worker concurrency
+- [x] Implement application-level dead-letter inspection, replay flow, and observability for exhausted jobs
+- [x] Add audit logging for manual edits
+- [x] Add retention and redaction controls for transcripts
+- [x] Add structured log fields for webhook ID, deal ID, call ID, and job ID
 
 Exit criteria:
 
-- [ ] Abuse controls work without breaking normal demo flow
-- [ ] Worker backlog and failures are visible
-- [ ] Failed jobs can be replayed safely
+- [x] Abuse controls work without breaking normal demo flow
+- [x] Worker backlog and failures are visible
+- [x] Failed jobs can be replayed safely
 
 ## Phase 13: Demo Hardening and Final Validation
 

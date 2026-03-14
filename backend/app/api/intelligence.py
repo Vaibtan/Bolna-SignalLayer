@@ -3,6 +3,7 @@
 import uuid
 from typing import Annotated
 
+import structlog
 from fastapi import APIRouter, Depends
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +22,8 @@ from app.schemas.intelligence import (
     RecommendationStatusUpdate,
     RiskSnapshotOut,
 )
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(tags=["intelligence"])
 
@@ -78,6 +81,7 @@ async def accept_recommendation(
     rec = await _get_recommendation(
         db, recommendation_id, current_user.org_id,
     )
+    old_status = rec.status
     await db.execute(
         update(ActionRecommendation)
         .where(ActionRecommendation.id == recommendation_id)
@@ -85,6 +89,13 @@ async def accept_recommendation(
     )
     await db.commit()
     await db.refresh(rec)
+    logger.info(
+        "audit.recommendation_accepted",
+        recommendation_id=str(recommendation_id),
+        deal_id=str(rec.deal_id),
+        user_id=str(current_user.id),
+        old_status=old_status,
+    )
     return ActionRecommendationOut.model_validate(rec)
 
 
@@ -101,6 +112,7 @@ async def dismiss_recommendation(
     rec = await _get_recommendation(
         db, recommendation_id, current_user.org_id,
     )
+    old_status = rec.status
     await db.execute(
         update(ActionRecommendation)
         .where(ActionRecommendation.id == recommendation_id)
@@ -108,6 +120,13 @@ async def dismiss_recommendation(
     )
     await db.commit()
     await db.refresh(rec)
+    logger.info(
+        "audit.recommendation_dismissed",
+        recommendation_id=str(recommendation_id),
+        deal_id=str(rec.deal_id),
+        user_id=str(current_user.id),
+        old_status=old_status,
+    )
     return ActionRecommendationOut.model_validate(rec)
 
 
@@ -125,6 +144,7 @@ async def update_recommendation(
     rec = await _get_recommendation(
         db, recommendation_id, current_user.org_id,
     )
+    old_status = rec.status
     changes: dict[str, object] = {}
     if payload.status is not None:
         changes["status"] = payload.status
@@ -140,6 +160,15 @@ async def update_recommendation(
         )
         await db.commit()
         await db.refresh(rec)
+        logger.info(
+            "audit.recommendation_edited",
+            recommendation_id=str(recommendation_id),
+            deal_id=str(rec.deal_id),
+            user_id=str(current_user.id),
+            old_status=old_status,
+            new_status=payload.status,
+            reason_changed=payload.reason is not None,
+        )
     return ActionRecommendationOut.model_validate(rec)
 
 

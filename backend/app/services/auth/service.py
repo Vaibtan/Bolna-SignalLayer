@@ -33,6 +33,13 @@ async def _check_rate_limit(email: str, ip: str) -> None:
     count = await redis.get(key)
     if count is not None and int(count) >= settings.AUTH_MAX_FAILED_ATTEMPTS:
         ttl = await redis.ttl(key)
+        logger.warning(
+            "auth.brute_force_lockout",
+            email=email,
+            ip=ip,
+            attempts=int(count),
+            ttl=ttl,
+        )
         raise RateLimitError(retry_after=max(ttl, 1))
 
 

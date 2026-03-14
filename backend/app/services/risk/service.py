@@ -156,12 +156,20 @@ async def run_risk_update(
             .options(load_only(
                 Stakeholder.id,
                 Stakeholder.deal_id,
+                Stakeholder.role_label_current,
+                Stakeholder.role_confidence_current,
                 Stakeholder.last_contacted_at,
             ))
             .where(Stakeholder.deal_id == deal.id)
         )
         stakeholders = list(sh_row.scalars().all())
         stakeholder_count = len(stakeholders)
+        has_economic_buyer = any(
+            stakeholder.role_label_current == "economic_buyer"
+            for stakeholder in stakeholders
+        ) or extracted.get("stakeholder", {}).get(
+                "role_label"
+            ) == "economic_buyer"
 
         # 5. Load previous risk snapshot for delta.
         prev_row = await db.execute(
@@ -174,7 +182,9 @@ async def run_risk_update(
 
         # 6. Run deterministic scoring.
         score, factors = score_extraction(
-            extracted, stakeholder_count,
+            extracted,
+            stakeholder_count,
+            has_economic_buyer=has_economic_buyer,
         )
         level = risk_level(score)
 
@@ -224,13 +234,28 @@ async def run_risk_update(
             target_sh.last_contacted_at = datetime.now(
                 timezone.utc,
             )
-            if sh_extraction.get("role_label"):
+            extracted_role_label = sh_extraction.get("role_label")
+            if (
+                isinstance(extracted_role_label, str)
+                and extracted_role_label.strip()
+                and extracted_role_label != "unknown"
+            ):
                 sh_updates["role_label_current"] = (
-                    sh_extraction["role_label"]
+                    extracted_role_label
                 )
-            if sh_extraction.get("role_confidence") is not None:
+                target_sh.role_label_current = extracted_role_label
+            extracted_role_confidence = sh_extraction.get(
+                "role_confidence"
+            )
+            if (
+                "role_label_current" in sh_updates
+                and extracted_role_confidence is not None
+            ):
                 sh_updates["role_confidence_current"] = (
-                    sh_extraction["role_confidence"]
+                    extracted_role_confidence
+                )
+                target_sh.role_confidence_current = (
+                    extracted_role_confidence
                 )
             if interaction.get("sentiment"):
                 sh_updates["sentiment_current"] = (

@@ -49,6 +49,10 @@ class Settings(BaseSettings):
         CALL_INIT_STAKEHOLDER_COOLDOWN_SECONDS: Cooldown before recalling a
             stakeholder.
         WORKER_MAX_CONCURRENT_PIPELINES: Max concurrent worker pipelines.
+        TRANSCRIPT_RETENTION_DAYS: Days to retain transcript-derived data
+            before automatic redaction.
+        TRANSCRIPT_RETENTION_SWEEP_INTERVAL_SECONDS: Frequency for the
+            background transcript retention sweep.
     """
 
     model_config = SettingsConfigDict(
@@ -100,6 +104,8 @@ class Settings(BaseSettings):
     CALL_INIT_WINDOW_SECONDS: int = 600
     CALL_INIT_STAKEHOLDER_COOLDOWN_SECONDS: int = 300
     WORKER_MAX_CONCURRENT_PIPELINES: int = 2
+    TRANSCRIPT_RETENTION_DAYS: int = 90
+    TRANSCRIPT_RETENTION_SWEEP_INTERVAL_SECONDS: int = 3600
 
 
 @lru_cache(maxsize=1)

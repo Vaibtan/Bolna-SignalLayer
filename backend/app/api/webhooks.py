@@ -80,5 +80,8 @@ async def bolna_webhook(request: Request) -> Response:
         "webhook.bolna_handled",
         processed=processed,
         ip=client_ip,
+        execution_id=payload.get("execution_id")
+        or payload.get("id"),
+        provider_status=payload.get("status"),
     )
     return Response(status_code=200)

@@ -98,6 +98,21 @@ def test_no_economic_buyer_adds_risk() -> None:
     assert "No economic buyer identified" in factors
 
 
+def test_existing_economic_buyer_avoids_deal_level_penalty() -> None:
+    data = _extraction_data(
+        **{
+            "stakeholder.role_label": "champion",
+            "deal_signals.next_step": "Follow up",
+        },
+    )
+    _, factors = score_extraction(
+        data,
+        3,
+        has_economic_buyer=True,
+    )
+    assert "No economic buyer identified" not in factors
+
+
 def test_single_threaded_account() -> None:
     data = _extraction_data()
     score, factors = score_extraction(data, 1)
@@ -477,3 +492,51 @@ async def test_run_risk_update_missing_extraction_is_retryable() -> None:
         )
 
     assert db.committed >= 2
+
+
+@pytest.mark.asyncio
+async def test_run_risk_update_preserves_known_role_when_extraction_is_unknown(
+) -> None:
+    org_id = uuid.uuid4()
+    deal = _make_deal(org_id)
+    sh = _make_stakeholder(deal.id)
+    sh.role_label_current = "economic_buyer"
+    sh.role_confidence_current = 0.91
+    cs = _make_call_session(deal.id, sh.id)
+    extraction = ExtractionSnapshot(
+        id=uuid.uuid4(),
+        call_session_id=cs.id,
+        schema_version="1.0",
+        prompt_version="1.0",
+        model_name="gemini-2.5-flash",
+        extracted_json=_extraction_data(
+            **{
+                "stakeholder.role_label": "unknown",
+                "stakeholder.role_confidence": 0.12,
+                "deal_signals.next_step": "Follow up Friday",
+            },
+        ),
+        summary="Follow-up call.",
+        confidence=0.8,
+    )
+    extraction.created_at = datetime.now(timezone.utc)
+
+    db = RiskSession(
+        call_session=cs,
+        deal=deal,
+        extraction=extraction,
+        stakeholders=[sh],
+        prev_risk=None,
+    )
+
+    result = await run_risk_update(
+        db, cs.id,  # type: ignore[arg-type]
+    )
+
+    assert result is not None
+    factors = (result.factors_json or {}).get(
+        "factors", []
+    )
+    assert "No economic buyer identified" not in factors
+    assert sh.role_label_current == "economic_buyer"
+    assert sh.role_confidence_current == 0.91

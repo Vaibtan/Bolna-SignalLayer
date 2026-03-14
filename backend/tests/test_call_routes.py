@@ -332,3 +332,45 @@ async def test_get_timeline_returns_events(
     assert len(data) == 2
     assert data[0]['event_type'] == 'call.initiated'
     assert data[1]['event_type'] == 'call.completed'
+
+
+@pytest.mark.asyncio
+async def test_redact_transcript_redacts_artifacts(
+    monkeypatch: pytest.MonkeyPatch,
+    client: AsyncClient,
+) -> None:
+    user = build_user()
+    call_id = uuid.uuid4()
+    call = _make_call_session(uuid.uuid4())
+    call.id = call_id
+    redacted: list[uuid.UUID] = []
+
+    async def fake_get(
+        *_a: object, **_kw: object,
+    ) -> CallSession:
+        return call
+
+    async def fake_redact(
+        _db: object, target_call_id: uuid.UUID,
+    ) -> None:
+        redacted.append(target_call_id)
+
+    monkeypatch.setattr(
+        call_svc, 'get_call_session', fake_get,
+    )
+    monkeypatch.setattr(
+        call_svc, 'redact_call_artifacts', fake_redact,
+    )
+
+    async def _user() -> User:
+        return user
+
+    app.dependency_overrides[get_current_user] = _user
+    app.dependency_overrides[get_db_session] = override_db
+
+    response = await client.delete(
+        f'/api/calls/{call_id}/transcript',
+    )
+
+    assert response.status_code == 204
+    assert redacted == [call_id]
