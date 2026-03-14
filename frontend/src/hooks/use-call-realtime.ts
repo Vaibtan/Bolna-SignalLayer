@@ -3,11 +3,42 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { WS_BASE } from '@/lib/api-client';
-import { CallSession, TERMINAL_CALL_STATUSES, getCallSession } from '@/lib/calls';
+import {
+  ACTIVE_MONITOR_PROCESSING_STATUSES,
+  CallSession,
+  TERMINAL_CALL_STATUSES,
+  getCallSession,
+} from '@/lib/calls';
 
 const POLL_INTERVAL = Number(
   process.env.NEXT_PUBLIC_ACTIVE_STATE_POLL_INTERVAL_MS ?? 5000,
 );
+const POST_CALL_GRACE_MS = 120_000;
+
+function shouldMonitorCall(session: CallSession | undefined): boolean {
+  if (!session) {
+    return true;
+  }
+
+  if (!TERMINAL_CALL_STATUSES.has(session.status)) {
+    return true;
+  }
+
+  if (
+    !ACTIVE_MONITOR_PROCESSING_STATUSES.has(
+      session.processing_status,
+    )
+  ) {
+    return false;
+  }
+
+  if (!session.ended_at) {
+    return true;
+  }
+
+  const endedAt = new Date(session.ended_at).getTime();
+  return Date.now() - endedAt < POST_CALL_GRACE_MS;
+}
 
 /**
  * Hook for real-time call monitoring.
@@ -16,7 +47,8 @@ const POLL_INTERVAL = Number(
  * - Connects a WebSocket to `/ws/calls/{callId}` for instant hints.
  * - On any WS message, immediately invalidates the query to refetch.
  * - On WS reconnect, invalidates to catch up on missed events.
- * - Stops both WS and polling once the call reaches a terminal status.
+ * - Keeps monitoring briefly after terminal call status so post-call
+ *   processing transitions can still reach the page.
  */
 export function useCallRealtime(callId: string) {
   const queryClient = useQueryClient();
@@ -30,7 +62,9 @@ export function useCallRealtime(callId: string) {
     queryFn: () => getCallSession(callId),
     refetchInterval: (query) => {
       const session = query.state.data;
-      if (session && TERMINAL_CALL_STATUSES.has(session.status)) return false;
+      if (!shouldMonitorCall(session)) {
+        return false;
+      }
       return POLL_INTERVAL;
     },
   });
@@ -38,15 +72,43 @@ export function useCallRealtime(callId: string) {
   const isTerminal = callSession
     ? TERMINAL_CALL_STATUSES.has(callSession.status)
     : false;
-
+  const shouldMonitor = shouldMonitorCall(callSession);
   const invalidate = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['call', callId] });
   }, [queryClient, callId]);
 
   useEffect(() => {
+    if (
+      !callSession ||
+      !TERMINAL_CALL_STATUSES.has(callSession.status) ||
+      !ACTIVE_MONITOR_PROCESSING_STATUSES.has(
+        callSession.processing_status,
+      ) ||
+      !callSession.ended_at
+    ) {
+      return;
+    }
+
+    const deadline =
+      new Date(callSession.ended_at).getTime() +
+      POST_CALL_GRACE_MS;
+    const delay = deadline - Date.now();
+    const timeoutId = window.setTimeout(() => {
+      invalidate();
+    }, Math.max(delay, 0));
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    callSession,
+    invalidate,
+  ]);
+
+  useEffect(() => {
     closingRef.current = false;
 
-    if (isTerminal) return;
+    if (!shouldMonitor) return;
 
     function connect() {
       const ws = new WebSocket(`${WS_BASE}/ws/calls/${callId}`);
@@ -90,7 +152,7 @@ export function useCallRealtime(callId: string) {
         wsRef.current = null;
       }
     };
-  }, [callId, isTerminal, invalidate]);
+  }, [callId, invalidate, shouldMonitor]);
 
   return {
     callSession: callSession ?? null,

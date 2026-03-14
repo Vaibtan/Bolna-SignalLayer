@@ -8,6 +8,14 @@ import { ApiError } from '@/lib/api-client';
 import { initiateCall } from '@/lib/calls';
 import { Deal, getDeal } from '@/lib/deals';
 import {
+  ActionRecommendation,
+  FollowupDraft,
+  acceptRecommendation,
+  dismissRecommendation,
+  getDrafts,
+  getRecommendations,
+} from '@/lib/intelligence';
+import {
   Stakeholder,
   StakeholderCreate,
   createStakeholder,
@@ -20,16 +28,26 @@ export default function DealWorkspacePage() {
 
   const [deal, setDeal] = useState<Deal | null>(null);
   const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
+  const [recommendations, setRecommendations] = useState<ActionRecommendation[]>([]);
+  const [drafts, setDrafts] = useState<FollowupDraft[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [callTarget, setCallTarget] = useState<Stakeholder | null>(null);
+  const hasLoadedDeal = deal !== null;
 
   useEffect(() => {
-    Promise.all([getDeal(dealId), listStakeholders(dealId)])
-      .then(([d, shs]) => {
+    Promise.all([
+      getDeal(dealId),
+      listStakeholders(dealId),
+      getRecommendations(dealId).catch(() => []),
+      getDrafts(dealId).catch(() => []),
+    ])
+      .then(([d, shs, recs, drfs]) => {
         setDeal(d);
         setStakeholders(shs);
+        setRecommendations(recs);
+        setDrafts(drfs);
         setErrorMsg('');
       })
       .catch((err) => {
@@ -46,6 +64,61 @@ export default function DealWorkspacePage() {
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dealId]);
+
+  useEffect(() => {
+    if (loading || !hasLoadedDeal) {
+      return;
+    }
+    if (recommendations.length > 0 && drafts.length > 0) {
+      return;
+    }
+
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 24;
+
+    const intervalId = window.setInterval(() => {
+      attempts += 1;
+      void Promise.all([
+        getDeal(dealId),
+        getRecommendations(dealId),
+        getDrafts(dealId),
+      ])
+        .then(([nextDeal, nextRecommendations, nextDrafts]) => {
+          if (cancelled) {
+            return;
+          }
+          setDeal(nextDeal);
+          setRecommendations(nextRecommendations);
+          setDrafts(nextDrafts);
+
+          if (
+            (nextRecommendations.length > 0 &&
+              nextDrafts.length > 0) ||
+            attempts >= maxAttempts
+          ) {
+            window.clearInterval(intervalId);
+          }
+        })
+        .catch(() => {
+          if (attempts >= maxAttempts) {
+            window.clearInterval(intervalId);
+          }
+        });
+    }, 5000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [
+    deal?.id,
+    dealId,
+    drafts.length,
+    hasLoadedDeal,
+    loading,
+    recommendations.length,
+  ]);
 
   if (loading) {
     return (
@@ -123,6 +196,21 @@ export default function DealWorkspacePage() {
           </div>
         </div>
 
+        {/* Recommendations */}
+        {recommendations.length > 0 && (
+          <RecommendationsSection
+            recommendations={recommendations}
+            onUpdate={(updated) =>
+              setRecommendations((prev) =>
+                prev.map((r) => (r.id === updated.id ? updated : r)),
+              )
+            }
+          />
+        )}
+
+        {/* Follow-up Drafts */}
+        {drafts.length > 0 && <DraftsSection drafts={drafts} />}
+
         {/* Stakeholders */}
         <div className='mt-8'>
           <div className='flex items-center justify-between'>
@@ -199,6 +287,116 @@ export default function DealWorkspacePage() {
         />
       )}
     </main>
+  );
+}
+
+function RecommendationsSection({
+  recommendations,
+  onUpdate,
+}: {
+  recommendations: ActionRecommendation[];
+  onUpdate: (r: ActionRecommendation) => void;
+}) {
+  async function handleAccept(id: string) {
+    const updated = await acceptRecommendation(id);
+    onUpdate(updated);
+  }
+  async function handleDismiss(id: string) {
+    const updated = await dismissRecommendation(id);
+    onUpdate(updated);
+  }
+
+  return (
+    <div className='mt-8'>
+      <h2 className='text-xl font-semibold text-slate-950'>
+        Recommendations
+      </h2>
+      <div className='mt-4 grid gap-3'>
+        {recommendations.map((rec) => (
+          <div
+            key={rec.id}
+            className='rounded-xl border border-slate-200 bg-white/75 p-5 backdrop-blur'
+          >
+            <div className='flex items-start justify-between'>
+              <div>
+                <p className='text-sm font-semibold text-slate-950'>
+                  {rec.action_type.replace(/_/g, ' ')}
+                </p>
+                <p className='mt-1 text-sm leading-relaxed text-slate-600'>
+                  {rec.reason}
+                </p>
+              </div>
+              <span
+                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                  rec.status === 'accepted'
+                    ? 'bg-green-100 text-green-700'
+                    : rec.status === 'dismissed'
+                      ? 'bg-slate-100 text-slate-500'
+                      : 'bg-blue-100 text-blue-700'
+                }`}
+              >
+                {rec.status}
+              </span>
+            </div>
+            {rec.status === 'proposed' && (
+              <div className='mt-3 flex gap-2'>
+                <button
+                  onClick={() => handleAccept(rec.id)}
+                  className='rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700'
+                >
+                  Accept
+                </button>
+                <button
+                  onClick={() => handleDismiss(rec.id)}
+                  className='rounded-lg bg-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-300'
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+            {typeof rec.payload_json?.talk_track === 'string' && rec.payload_json.talk_track && (
+              <p className='mt-2 rounded-lg bg-amber-50 p-3 text-xs leading-relaxed text-amber-800'>
+                <span className='font-semibold'>Talk track: </span>
+                {rec.payload_json.talk_track}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DraftsSection({ drafts }: { drafts: FollowupDraft[] }) {
+  return (
+    <div className='mt-8'>
+      <h2 className='text-xl font-semibold text-slate-950'>
+        Follow-up Drafts
+      </h2>
+      <div className='mt-4 grid gap-3'>
+        {drafts.map((draft) => (
+          <div
+            key={draft.id}
+            className='rounded-xl border border-slate-200 bg-white/75 p-5 backdrop-blur'
+          >
+            <div className='flex items-center gap-2'>
+              <span className='rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600'>
+                {draft.draft_type.replace(/_/g, ' ')}
+              </span>
+              <span className='text-xs text-slate-400'>{draft.tone}</span>
+            </div>
+            {draft.subject && (
+              <p className='mt-2 text-sm font-medium text-slate-800'>
+                {draft.subject}
+              </p>
+            )}
+            <p className='mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-600'>
+              {draft.body_text}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

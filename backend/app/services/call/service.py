@@ -8,13 +8,16 @@ import structlog
 from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import load_only
 
 from app.core.config import get_settings
 from app.core.exceptions import NotFoundError, RateLimitError
+from app.models.call_event import CallEvent
 from app.models.call_session import CallSession
 from app.models.deal import Deal
 from app.models.extraction_snapshot import ExtractionSnapshot
 from app.models.stakeholder import Stakeholder
+from app.models.transcript_utterance import TranscriptUtterance
 from app.services.bolna.adapter import (
     BolnaAdapter,
     CallRequest,
@@ -374,3 +377,49 @@ async def get_call_session(
     if cs is None:
         raise NotFoundError("Call session not found.")
     return cs
+
+
+async def get_call_transcript(
+    db: AsyncSession,
+    org_id: uuid.UUID,
+    call_id: uuid.UUID,
+) -> list[TranscriptUtterance]:
+    """Return transcript utterances for a call (org-scoped)."""
+    # Verify the call belongs to the org first.
+    await get_call_session(db, org_id, call_id)
+
+    result = await db.execute(
+        select(TranscriptUtterance)
+        .where(TranscriptUtterance.call_session_id == call_id)
+        .order_by(TranscriptUtterance.sequence_number)
+    )
+    return list(result.scalars().all())
+
+
+async def get_call_timeline(
+    db: AsyncSession,
+    org_id: uuid.UUID,
+    call_id: uuid.UUID,
+) -> list[CallEvent]:
+    """Return call events for a timeline view (org-scoped)."""
+    await get_call_session(db, org_id, call_id)
+
+    result = await db.execute(
+        select(CallEvent)
+        .options(load_only(
+            CallEvent.id,
+            CallEvent.call_session_id,
+            CallEvent.provider_event_id,
+            CallEvent.event_type,
+            CallEvent.event_timestamp,
+            CallEvent.sequence_number,
+            CallEvent.created_at,
+        ))
+        .where(CallEvent.call_session_id == call_id)
+        .order_by(
+            CallEvent.event_timestamp,
+            CallEvent.created_at,
+            CallEvent.id,
+        )
+    )
+    return list(result.scalars().all())

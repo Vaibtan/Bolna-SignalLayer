@@ -61,7 +61,19 @@
       "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer/backend && python -c \"from redis.asyncio.client import PubSub; import inspect; print\\([m for m in dir\\(PubSub\\) if 'close' in m.lower\\(\\)]\\)\" 2>&1)",
       "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer/backend && uv run python -c \"from redis.asyncio.client import PubSub; import inspect; print\\([m for m in dir\\(PubSub\\) if 'close' in m.lower\\(\\)]\\); sig = inspect.signature\\(PubSub.close\\); print\\('close sig:', sig\\)\" 2>&1)",
       "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer/backend && uv run python -c \"\nfrom redis.asyncio.client import PubSub\nimport inspect\nprint\\('close is coroutine:', inspect.iscoroutinefunction\\(PubSub.close\\)\\)\nprint\\('aclose is coroutine:', inspect.iscoroutinefunction\\(PubSub.aclose\\)\\)\n\" 2>&1)",
-      "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer/backend && uv run ruff check app/api/ws.py tests/test_ws.py 2>&1)"
+      "Bash(cd D:/SWE_DEV_NEW/Bolna-SignalLayer/backend && uv run ruff check app/api/ws.py tests/test_ws.py 2>&1)",
+      "Bash(cd \"D:\\\\SWE_DEV_NEW\\\\Bolna-SignalLayer\\\\backend\" && uv run alembic revision --autogenerate -m \"add_transcript_utterances_table\")",
+      "Bash(cd \"D:\\\\SWE_DEV_NEW\\\\Bolna-SignalLayer\\\\backend\" && uv run alembic upgrade head)",
+      "Bash(cd \"D:\\\\SWE_DEV_NEW\\\\Bolna-SignalLayer\\\\backend\" && uv run pytest tests/test_transcript_service.py tests/test_call_routes.py -v 2>&1)",
+      "Bash(cd \"D:\\\\SWE_DEV_NEW\\\\Bolna-SignalLayer\\\\backend\" && uv run pytest -v 2>&1)",
+      "Bash(cd \"D:\\\\SWE_DEV_NEW\\\\Bolna-SignalLayer\\\\backend\" && uv run ruff check app/ tests/ 2>&1)",
+      "Bash(cd \"D:\\\\SWE_DEV_NEW\\\\Bolna-SignalLayer\\\\backend\" && uv run ruff check --fix app/ tests/ 2>&1)",
+      "Bash(cd \"D:\\\\SWE_DEV_NEW\\\\Bolna-SignalLayer\\\\backend\" && uv run ruff check app/ tests/ 2>&1 && uv run mypy app/ 2>&1)",
+      "Bash(cd \"D:\\\\SWE_DEV_NEW\\\\Bolna-SignalLayer\\\\frontend\" && npx eslint src/app/deals/\\\\[dealId\\\\]/call/\\\\[callId\\\\]/page.tsx src/lib/calls.ts --max-warnings=0 2>&1)",
+      "Bash(cd \"D:\\\\SWE_DEV_NEW\\\\Bolna-SignalLayer\\\\frontend\" && npx tsc --noEmit 2>&1)",
+      "Bash(cd \"D:\\\\SWE_DEV_NEW\\\\Bolna-SignalLayer\\\\frontend\" && npx next build 2>&1)",
+      "Bash(cd \"D:\\\\SWE_DEV_NEW\\\\Bolna-SignalLayer\\\\backend\" && uv run pytest -q 2>&1)",
+      "Bash(cd \"D:\\\\SWE_DEV_NEW\\\\Bolna-SignalLayer\\\\frontend\" && npx eslint src/app/deals/\\\\[dealId\\\\]/call/\\\\[callId\\\\]/page.tsx src/lib/calls.ts --max-warnings=0 2>&1 && npx tsc --noEmit 2>&1)"
     ]
   },
   "enableAllProjectMcpServers": true,

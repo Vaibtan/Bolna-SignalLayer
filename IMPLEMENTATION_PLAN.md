@@ -231,20 +231,20 @@ Goal: give the UI near-real-time updates without depending on WebSockets for cor
 
 Checklist:
 
-- [ ] Implement backend WebSocket endpoints for deals and calls
-- [ ] Add Redis pub/sub bridge so `worker` and `api` can both trigger UI updates
-- [ ] Emit lightweight "state changed" messages rather than full payloads
-- [ ] Build call page and live status components
-- [ ] Add active-state polling fallback in the frontend
-- [ ] On WebSocket reconnect, invalidate active call and deal queries immediately
-- [ ] Stop active-state polling once terminal call and extraction states are reached
-- [ ] Add frontend tests for reconnect recovery and polling fallback
+- [x] Implement backend WebSocket endpoints for deals and calls
+- [x] Add Redis pub/sub bridge so `worker` and `api` can both trigger UI updates
+- [x] Emit lightweight "state changed" messages rather than full payloads
+- [x] Build call page and live status components
+- [x] Add active-state polling fallback in the frontend
+- [x] On WebSocket reconnect, invalidate active call and deal queries immediately
+- [x] Stop active-state polling once terminal call and extraction states are reached
+- [x] Add frontend tests for reconnect recovery and polling fallback
 
 Exit criteria:
 
-- [ ] UI updates during and after a call without full page reload
-- [ ] UI recovers after browser sleep, tab restore, or network switch
-- [ ] No page remains stuck in loading because a WebSocket update was missed
+- [x] UI updates during and after a call without full page reload
+- [x] UI recovers after browser sleep, tab restore, or network switch
+- [x] No page remains stuck in loading because a WebSocket update was missed
 
 ## Phase 7: Transcript Persistence and Call Timeline
 
@@ -252,18 +252,18 @@ Goal: make transcript and timeline artifacts durable and inspectable.
 
 Checklist:
 
-- [ ] Implement `TranscriptUtterance` storage model
-- [ ] Add transcript normalization service
-- [ ] Support transcript finalization from webhook or polling result
-- [ ] Implement timeline query endpoint
-- [ ] Render transcript drawer and call timeline in the frontend
-- [ ] Ensure transcript storage succeeds even if later AI jobs fail
+- [x] Implement `TranscriptUtterance` storage model
+- [x] Add transcript normalization service
+- [x] Support transcript finalization from webhook or polling result
+- [x] Implement timeline query endpoint
+- [x] Render transcript drawer and call timeline in the frontend
+- [x] Ensure transcript storage succeeds even if later AI jobs fail
 
 Exit criteria:
 
-- [ ] Completed call shows transcript in UI
-- [ ] Timeline shows call initiation, completion, and transcript receipt
-- [ ] Raw call artifacts are inspectable in debug mode
+- [x] Completed call shows transcript in UI
+- [x] Timeline shows call initiation, completion, and transcript receipt
+- [x] Raw call artifacts are inspectable in debug mode
 
 ## Phase 8: Extraction Pipeline and Evidence Anchors
 
@@ -271,20 +271,20 @@ Goal: convert transcript into schema-valid structured intelligence.
 
 Checklist:
 
-- [ ] Implement extraction schema in Pydantic
-- [ ] Call `google-genai` using response-schema structured outputs
-- [ ] Add `tenacity` retry loop for schema repair attempts
-- [ ] Capture validation failures and retry up to configured budget
-- [ ] Persist `ExtractionSnapshot`
-- [ ] Persist `EvidenceAnchor`
-- [ ] Add extraction processing state transitions
-- [ ] Add unit tests for extraction normalization and validation-retry behavior
+- [x] Implement extraction schema in Pydantic
+- [x] Call `google-genai` using response-schema structured outputs
+- [x] Add `tenacity` retry loop for schema repair attempts
+- [x] Capture validation failures and retry up to configured budget
+- [x] Persist `ExtractionSnapshot`
+- [x] Persist `EvidenceAnchor`
+- [x] Add extraction processing state transitions
+- [x] Add unit tests for extraction normalization and validation-retry behavior
 
 Exit criteria:
 
-- [ ] Completed call produces a valid extraction artifact
-- [ ] Critical extracted fields have evidence anchors
-- [ ] Invalid model output does not crash the worker silently
+- [x] Completed call produces a valid extraction artifact
+- [x] Critical extracted fields have evidence anchors
+- [x] Invalid model output does not crash the worker silently
 
 ## Phase 9: Risk Engine and Snapshot Updates
 
@@ -292,18 +292,18 @@ Goal: compute interpretable risk safely under concurrent call completions.
 
 Checklist:
 
-- [ ] Implement `StakeholderSnapshot`, `DealSnapshot`, and `RiskSnapshot`
-- [ ] Implement deterministic risk scoring rules
-- [ ] Add delta computation vs previous risk snapshot
-- [ ] Acquire row-level lock on the `Deal` row before mutating projections and snapshots
-- [ ] Ensure concurrent completions for the same deal do not corrupt the latest state
-- [ ] Add unit tests for risk rules and concurrent update safety
+- [x] Implement `StakeholderSnapshot`, `DealSnapshot`, and `RiskSnapshot`
+- [x] Implement deterministic risk scoring rules
+- [x] Add delta computation vs previous risk snapshot
+- [x] Acquire row-level lock on the `Deal` row before mutating projections and snapshots
+- [x] Ensure concurrent completions for the same deal do not corrupt the latest state
+- [x] Add unit tests for risk rules and concurrent update safety
 
 Exit criteria:
 
-- [ ] Risk updates after each processed call
-- [ ] User can inspect major factors and deltas
-- [ ] Concurrent worker runs do not produce inconsistent deal state
+- [x] Risk updates after each processed call
+- [x] User can inspect major factors and deltas
+- [x] Concurrent worker runs do not produce inconsistent deal state
 
 ## Phase 10: Recommendations and Follow-up Drafts
 
@@ -311,19 +311,19 @@ Goal: generate actionable recommendations and operator-ready outputs.
 
 Checklist:
 
-- [ ] Implement recommendation input builder from extraction + risk + prior memory
-- [ ] Implement `ActionRecommendation`
-- [ ] Implement `FollowupDraft` including `crm_note`
-- [ ] Ensure recommendation does not block on current-call embedding completion
-- [ ] Implement accept, dismiss, and edit actions
-- [ ] Render recommendation card and draft editor in the frontend
-- [ ] Add tests for recommendation policy fallbacks
+- [x] Implement recommendation input builder from extraction + risk + prior memory
+- [x] Implement `ActionRecommendation`
+- [x] Implement `FollowupDraft` including `crm_note`
+- [x] Ensure recommendation does not block on current-call embedding completion
+- [x] Implement accept, dismiss, and edit actions
+- [x] Render recommendation card and draft editor in the frontend
+- [x] Add tests for recommendation policy fallbacks
 
 Exit criteria:
 
-- [ ] After a call, the UI shows at least one recommendation
-- [ ] Follow-up draft and CRM note are generated
-- [ ] User can accept or dismiss recommendations
+- [x] After a call, the UI shows at least one recommendation
+- [x] Follow-up draft and CRM note are generated
+- [x] User can accept or dismiss recommendations
 
 ## Phase 11: Memory and pgvector
 
@@ -331,18 +331,18 @@ Goal: add semantic retrieval without slowing the first post-call result.
 
 Checklist:
 
-- [ ] Enable `pgvector`
-- [ ] Implement `MemoryDocument`
-- [ ] Generate call summary, objection summary, stakeholder summary, and action rationale documents
-- [ ] Run embedding generation in a non-blocking branch
-- [ ] Implement deal/stakeholder memory search endpoints
+- [x] Enable `pgvector`
+- [x] Implement `MemoryDocument`
+- [x] Generate call summary, objection summary, stakeholder summary, and action rationale documents
+- [x] Run embedding generation in a non-blocking branch
+- [x] Implement deal/stakeholder memory search endpoints
 - [ ] Add debug UI for retrieved evidence and scores
 
 Exit criteria:
 
-- [ ] Memory documents are persisted and embedded
-- [ ] Search returns ranked results
-- [ ] Initial risk update and first recommendation are not blocked by embedding
+- [x] Memory documents are persisted and embedded
+- [x] Search returns ranked results
+- [x] Initial risk update and first recommendation are not blocked by embedding
 
 ## Phase 12: Rate Limit Hardening, Reliability, and Observability
 

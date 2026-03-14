@@ -17,8 +17,23 @@ from app.models.call_event import CallEvent
 from app.models.call_session import CallSession
 from app.services.bolna.fixture_capture import maybe_capture_payload
 from app.services.realtime.pubsub import notify_call_update
+from app.services.transcripts.service import persist_transcript
 
 logger = structlog.get_logger(__name__)
+
+
+def _enqueue_extraction(call_session_id: str) -> None:
+    """Enqueue the extraction actor (lazy import)."""
+    try:
+        from app.workers.tasks import extract_call
+
+        extract_call.send(call_session_id)
+    except Exception:
+        logger.warning(
+            "extraction.enqueue_failed",
+            call_session_id=call_session_id,
+            exc_info=True,
+        )
 
 # Bolna status string → internal event type.
 _STATUS_MAP: dict[str, str] = {
@@ -163,16 +178,17 @@ async def _update_session_projection(
     session: CallSession,
     event_type: str,
     payload: dict[str, Any],
-) -> None:
+) -> bool:
     """Update the CallSession read-model from a normalized event."""
     new_status = _EVENT_TO_SESSION_STATUS.get(event_type)
     if not new_status:
-        return
+        return False
 
     changes: dict[str, Any] = {
         "status": new_status,
         "updated_at": func.now(),
     }
+    should_enqueue_extraction = False
 
     if event_type == "call.started":
         changes["started_at"] = func.now()
@@ -188,15 +204,23 @@ async def _update_session_projection(
 
     transcript = payload.get("transcript")
     if transcript and new_status in _TERMINAL_STATUSES:
-        changes["processing_status"] = (
-            "transcript_finalized"
+        persisted_utterances = await persist_transcript(
+            db,
+            session.id,
+            str(transcript),
         )
+        if persisted_utterances:
+            changes["processing_status"] = (
+                "transcript_finalized"
+            )
+            should_enqueue_extraction = True
 
     await db.execute(
         update(CallSession)
         .where(CallSession.id == session.id)
         .values(**changes)
     )
+    return should_enqueue_extraction
 
 
 async def process_bolna_event(
@@ -263,8 +287,9 @@ async def process_bolna_event(
             else None,
         )
 
+        should_enqueue_extraction = False
         if event_type:
-            await _update_session_projection(
+            should_enqueue_extraction = await _update_session_projection(
                 db, session, event_type, raw_payload,
             )
 
@@ -282,6 +307,10 @@ async def process_bolna_event(
             deal_id=str(session.deal_id),
             event_type=stored_type,
         )
+
+    # 7. Enqueue extraction when transcript is finalized.
+    if should_enqueue_extraction:
+        _enqueue_extraction(str(session.id))
 
     logger.info(
         "bolna.event_processed",

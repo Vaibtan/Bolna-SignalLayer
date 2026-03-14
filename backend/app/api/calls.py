@@ -11,7 +11,12 @@ from app.core.exceptions import DealGraphError
 from app.core.redis import get_redis_client
 from app.db.session import get_db_session
 from app.models.user import User
-from app.schemas.call import CallInitiateRequest, CallSessionOut
+from app.schemas.call import (
+    CallInitiateRequest,
+    CallSessionOut,
+    CallTimelineEventOut,
+    TranscriptUtteranceOut,
+)
 from app.services.bolna.adapter import get_bolna_adapter
 from app.services.call import service as call_svc
 
@@ -76,3 +81,45 @@ async def get_call(
         call_id=call_id,
     )
     return CallSessionOut.model_validate(session)
+
+
+@router.get(
+    "/api/calls/{call_id}/transcript",
+    response_model=list[TranscriptUtteranceOut],
+)
+async def get_call_transcript(
+    call_id: uuid.UUID,
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> list[TranscriptUtteranceOut]:
+    """Return transcript utterances for a call."""
+    utterances = await call_svc.get_call_transcript(
+        db=db,
+        org_id=current_user.org_id,
+        call_id=call_id,
+    )
+    return [
+        TranscriptUtteranceOut.model_validate(u)
+        for u in utterances
+    ]
+
+
+@router.get(
+    "/api/calls/{call_id}/timeline",
+    response_model=list[CallTimelineEventOut],
+)
+async def get_call_timeline(
+    call_id: uuid.UUID,
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> list[CallTimelineEventOut]:
+    """Return call events as a timeline."""
+    events = await call_svc.get_call_timeline(
+        db=db,
+        org_id=current_user.org_id,
+        call_id=call_id,
+    )
+    return [
+        CallTimelineEventOut.model_validate(e)
+        for e in events
+    ]

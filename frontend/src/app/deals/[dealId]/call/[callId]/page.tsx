@@ -3,8 +3,16 @@
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import { ApiError } from '@/lib/api-client';
+import {
+  CallTimelineEvent,
+  TRANSCRIPT_READY_STATUSES,
+  TranscriptUtterance,
+  getCallTimeline,
+  getCallTranscript,
+} from '@/lib/calls';
 import { useCallRealtime } from '@/hooks/use-call-realtime';
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
@@ -64,6 +72,88 @@ function formatTime(iso: string): string {
     minute: '2-digit',
     second: '2-digit',
   });
+}
+
+function formatEventType(eventType: string): string {
+  return eventType.replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function TranscriptSection({ callId, processingStatus }: { callId: string; processingStatus: string }) {
+  const ready = TRANSCRIPT_READY_STATUSES.has(processingStatus);
+
+  const { data: utterances, isLoading } = useQuery<TranscriptUtterance[]>({
+    queryKey: ['call-transcript', callId],
+    queryFn: () => getCallTranscript(callId),
+    enabled: ready,
+    staleTime: Infinity,
+  });
+
+  if (!ready) return null;
+
+  return (
+    <div className='mt-6 rounded-xl border border-slate-200 bg-slate-50 p-6'>
+      <h2 className='text-sm font-semibold text-slate-700'>Transcript</h2>
+      {isLoading ? (
+        <p className='mt-2 text-sm text-slate-400'>Loading transcript...</p>
+      ) : !utterances?.length ? (
+        <p className='mt-2 text-sm text-slate-400'>No transcript available.</p>
+      ) : (
+        <div className='mt-3 max-h-96 space-y-3 overflow-y-auto'>
+          {utterances.map((u) => (
+            <div key={u.id} className='flex gap-3'>
+              <span
+                className={`mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                  u.speaker === 'agent'
+                    ? 'bg-orange-100 text-orange-700'
+                    : u.speaker === 'prospect'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-slate-200 text-slate-600'
+                }`}
+              >
+                {u.speaker === 'agent' ? 'A' : u.speaker === 'prospect' ? 'P' : '?'}
+              </span>
+              <div>
+                <p className='text-xs font-medium capitalize text-slate-500'>
+                  {u.speaker}
+                </p>
+                <p className='text-sm leading-relaxed text-slate-800'>{u.text}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TimelineSection({ callId, isTerminal }: { callId: string; isTerminal: boolean }) {
+  const { data: events } = useQuery<CallTimelineEvent[]>({
+    queryKey: ['call-timeline', callId],
+    queryFn: () => getCallTimeline(callId),
+    enabled: isTerminal,
+    staleTime: Infinity,
+  });
+
+  if (!isTerminal || !events || events.length === 0) return null;
+
+  return (
+    <div className='mt-6 rounded-xl border border-slate-200 bg-slate-50 p-6'>
+      <h2 className='text-sm font-semibold text-slate-700'>Timeline</h2>
+      <ol className='relative mt-3 border-l border-slate-300 ml-2'>
+        {events.map((ev) => (
+          <li key={ev.id} className='mb-4 ml-4 last:mb-0'>
+            <div className='absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border border-white bg-slate-400' />
+            <p className='text-sm font-medium text-slate-800'>
+              {formatEventType(ev.event_type)}
+            </p>
+            <time className='text-xs text-slate-500'>
+              {formatTime(ev.event_timestamp)}
+            </time>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
 }
 
 export default function CallPage() {
@@ -193,6 +283,9 @@ export default function CallPage() {
               </p>
             </div>
           </div>
+
+          <TranscriptSection callId={callId} processingStatus={callSession.processing_status} />
+          <TimelineSection callId={callId} isTerminal={isTerminal} />
 
           {isTerminal && (
             <div className='mt-6'>

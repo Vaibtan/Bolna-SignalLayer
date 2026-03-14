@@ -46,3 +46,63 @@ export const TERMINAL_CALL_STATUSES = new Set([
   'failed',
   'canceled',
 ]);
+
+/** Processing statuses at which the transcript is available. */
+export const TRANSCRIPT_READY_STATUSES = new Set([
+  'transcript_finalized',
+  'extraction_running',
+  'extraction_completed',
+  'snapshots_updating',
+  'risk_running',
+  'recommendation_completed',
+]);
+
+/** Processing states that still warrant post-call live monitoring. */
+export const ACTIVE_MONITOR_PROCESSING_STATUSES = new Set([
+  'pending',
+  'transcript_partial',
+  'transcript_finalized',
+  'extraction_running',
+  'extraction_completed',
+  'snapshots_updating',
+  'risk_running',
+]);
+
+export interface TranscriptUtterance {
+  id: string;
+  call_session_id: string;
+  provider_segment_id: string | null;
+  speaker: string;
+  text: string;
+  start_ms: number | null;
+  end_ms: number | null;
+  sequence_number: number;
+  is_final: boolean;
+  created_at: string;
+}
+
+export interface CallTimelineEvent {
+  id: string;
+  call_session_id: string;
+  provider_event_id: string | null;
+  event_type: string;
+  event_timestamp: string;
+  sequence_number: number | null;
+  created_at: string;
+}
+
+export function getCallTranscript(
+  callId: string,
+): Promise<TranscriptUtterance[]> {
+  return apiFetch<TranscriptUtterance[]>(
+    `/api/calls/${callId}/transcript`,
+  );
+}
+
+export function getCallTimeline(
+  callId: string,
+): Promise<CallTimelineEvent[]> {
+  return apiFetch<CallTimelineEvent[]>(
+    `/api/calls/${callId}/timeline`,
+  );
+}

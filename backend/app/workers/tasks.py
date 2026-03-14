@@ -111,3 +111,127 @@ def poll_execution_status(
 ) -> None:
     """Background actor: poll Bolna for execution updates."""
     asyncio.run(_poll_execution(call_session_id))
+
+
+async def _run_extraction(call_session_id: str) -> None:
+    """Run the extraction pipeline for a completed call."""
+    import uuid as _uuid
+
+    from app.db.session import get_session_factory
+    from app.services.extraction.service import run_extraction
+
+    session_factory = get_session_factory()
+
+    async with session_factory() as db:
+        snapshot = await run_extraction(
+            db, _uuid.UUID(call_session_id),
+        )
+
+    if snapshot is not None:
+        try:
+            compute_risk.send(call_session_id)
+        except Exception:
+            logger.warning(
+                "risk.enqueue_failed",
+                call_session_id=call_session_id,
+                exc_info=True,
+            )
+
+
+@dramatiq.actor(max_retries=2)
+def extract_call(call_session_id: str) -> None:
+    """Background actor: extract structured data from call."""
+    asyncio.run(_run_extraction(call_session_id))
+
+
+async def _run_risk(call_session_id: str) -> None:
+    """Run the risk engine for a completed extraction."""
+    import uuid as _uuid
+
+    from app.db.session import get_session_factory
+    from app.services.risk.service import run_risk_update
+
+    session_factory = get_session_factory()
+
+    async with session_factory() as db:
+        result = await run_risk_update(
+            db, _uuid.UUID(call_session_id),
+        )
+
+    if result is not None:
+        try:
+            generate_recommendations.send(call_session_id)
+        except Exception:
+            logger.warning(
+                "recommendation.enqueue_failed",
+                call_session_id=call_session_id,
+                exc_info=True,
+            )
+
+
+@dramatiq.actor(max_retries=2)
+def compute_risk(call_session_id: str) -> None:
+    """Background actor: compute risk after extraction."""
+    asyncio.run(_run_risk(call_session_id))
+
+
+async def _run_recommendation(
+    call_session_id: str,
+) -> None:
+    """Run the recommendation pipeline."""
+    import uuid as _uuid
+
+    from app.db.session import get_session_factory
+    from app.services.recommendation.service import (
+        run_recommendation,
+    )
+
+    session_factory = get_session_factory()
+
+    async with session_factory() as db:
+        recs = await run_recommendation(
+            db, _uuid.UUID(call_session_id),
+        )
+
+    if recs:
+        try:
+            embed_memory_documents.send(call_session_id)
+        except Exception:
+            logger.warning(
+                "memory.enqueue_failed",
+                call_session_id=call_session_id,
+                exc_info=True,
+            )
+
+
+@dramatiq.actor(max_retries=2)
+def generate_recommendations(
+    call_session_id: str,
+) -> None:
+    """Background actor: generate recommendations."""
+    asyncio.run(_run_recommendation(call_session_id))
+
+
+async def _run_memory(call_session_id: str) -> None:
+    """Generate and embed memory documents."""
+    import uuid as _uuid
+
+    from app.db.session import get_session_factory
+    from app.services.memory.service import (
+        generate_memory_documents,
+    )
+
+    session_factory = get_session_factory()
+
+    async with session_factory() as db:
+        await generate_memory_documents(
+            db, _uuid.UUID(call_session_id),
+        )
+
+
+@dramatiq.actor(max_retries=1)
+def embed_memory_documents(
+    call_session_id: str,
+) -> None:
+    """Background actor: generate and embed memory docs."""
+    asyncio.run(_run_memory(call_session_id))

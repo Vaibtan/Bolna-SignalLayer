@@ -38,6 +38,7 @@ _PROCESSING_STATES = (
     "extraction_completed",
     "snapshots_updating",
     "risk_running",
+    "recommendation_running",
     "recommendation_completed",
     "failed_retryable",
     "failed_terminal",

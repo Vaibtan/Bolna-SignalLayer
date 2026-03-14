@@ -118,12 +118,85 @@ async def test_process_completed_webhook() -> None:
     )
 
     assert result is True
-    assert len(db.added) == 1
-    assert isinstance(db.added[0], CallEvent)
-    assert db.added[0].event_type == "call.completed"
+    events = [
+        item for item in db.added
+        if isinstance(item, CallEvent)
+    ]
+    assert len(events) == 1
+    assert events[0].event_type == "call.completed"
     # Session projection was updated
     assert len(db.updates) == 1
     assert db.committed is True
+
+
+@pytest.mark.asyncio
+async def test_completed_webhook_enqueues_extraction_once(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    payload = load_fixture(
+        "bolna_webhook_completed.json",
+    )
+    cs = _make_session("exec_xyz789")
+    redis = FakeRedis()
+    db = IngestionSession(call_session=cs)
+    enqueued: list[str] = []
+
+    async def fake_persist(*_args: object, **_kwargs: object) -> list[object]:
+        return [object()]
+
+    monkeypatch.setattr(
+        "app.services.bolna.ingestion.persist_transcript",
+        fake_persist,
+    )
+    monkeypatch.setattr(
+        "app.services.bolna.ingestion._enqueue_extraction",
+        enqueued.append,
+    )
+
+    result = await process_bolna_event(
+        db=db,  # type: ignore[arg-type]
+        redis=redis,  # type: ignore[arg-type]
+        raw_payload=payload,
+        source="webhook",
+    )
+
+    assert result is True
+    assert enqueued == [str(cs.id)]
+
+
+@pytest.mark.asyncio
+async def test_completed_webhook_skips_extraction_if_transcript_exists(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    payload = load_fixture(
+        "bolna_webhook_completed.json",
+    )
+    cs = _make_session("exec_xyz789")
+    redis = FakeRedis()
+    db = IngestionSession(call_session=cs)
+    enqueued: list[str] = []
+
+    async def fake_persist(*_args: object, **_kwargs: object) -> list[object]:
+        return []
+
+    monkeypatch.setattr(
+        "app.services.bolna.ingestion.persist_transcript",
+        fake_persist,
+    )
+    monkeypatch.setattr(
+        "app.services.bolna.ingestion._enqueue_extraction",
+        enqueued.append,
+    )
+
+    result = await process_bolna_event(
+        db=db,  # type: ignore[arg-type]
+        redis=redis,  # type: ignore[arg-type]
+        raw_payload=payload,
+        source="webhook",
+    )
+
+    assert result is True
+    assert enqueued == []
 
 
 @pytest.mark.asyncio

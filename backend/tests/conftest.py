@@ -3,8 +3,9 @@
 import json
 import uuid
 from collections.abc import AsyncIterator, Iterator
+from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 import pytest_asyncio
@@ -19,7 +20,10 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 def load_fixture(name: str) -> dict[str, Any]:
     """Load a JSON test fixture by filename."""
-    return json.loads((FIXTURES / name).read_text())
+    return cast(
+        dict[str, Any],
+        json.loads((FIXTURES / name).read_text()),
+    )
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -160,6 +164,10 @@ class FakeSession:
 
     def add(self, instance: Any) -> None:
         self.added.append(instance)
+
+    @asynccontextmanager
+    async def begin_nested(self) -> AsyncIterator['FakeSession']:
+        yield self
 
     async def flush(self) -> None:
         if self.added:

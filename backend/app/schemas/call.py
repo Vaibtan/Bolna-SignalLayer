@@ -34,3 +34,30 @@ class CallSessionOut(BaseModel):
     provider_metadata_json: dict[str, Any] | None
     created_at: datetime
     updated_at: datetime
+
+
+class TranscriptUtteranceOut(BaseModel):
+    model_config = {"from_attributes": True}
+
+    id: uuid.UUID
+    call_session_id: uuid.UUID
+    provider_segment_id: str | None
+    speaker: str
+    text: str
+    start_ms: int | None
+    end_ms: int | None
+    sequence_number: int
+    is_final: bool
+    created_at: datetime
+
+
+class CallTimelineEventOut(BaseModel):
+    model_config = {"from_attributes": True}
+
+    id: uuid.UUID
+    call_session_id: uuid.UUID
+    provider_event_id: str | None
+    event_type: str
+    event_timestamp: datetime
+    sequence_number: int | None
+    created_at: datetime

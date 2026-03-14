@@ -13,6 +13,8 @@ from fastapi.responses import Response
 from app.api.auth import router as auth_router
 from app.api.calls import router as calls_router
 from app.api.deals import router as deals_router
+from app.api.intelligence import router as intelligence_router
+from app.api.memory import router as memory_router
 from app.api.stakeholders import router as stakeholders_router
 from app.api.webhooks import router as webhooks_router
 from app.api.ws import router as ws_router
@@ -82,6 +84,8 @@ app.add_exception_handler(
 app.include_router(auth_router)
 app.include_router(calls_router)
 app.include_router(deals_router)
+app.include_router(intelligence_router)
+app.include_router(memory_router)
 app.include_router(stakeholders_router)
 app.include_router(webhooks_router)
 app.include_router(ws_router)

@@ -10,7 +10,9 @@ from httpx import AsyncClient
 from app.api.deps import get_current_user
 from app.db.session import get_db_session
 from app.main import app
+from app.models.call_event import CallEvent
 from app.models.call_session import CallSession
+from app.models.transcript_utterance import TranscriptUtterance
 from app.models.user import User
 from app.services.call import service as call_svc
 
@@ -189,3 +191,144 @@ async def test_initiate_call_rejects_invalid_objective(
     )
 
     assert response.status_code == 422
+
+
+# --- Transcript endpoint ---
+
+
+def _make_utterance(
+    call_session_id: uuid.UUID,
+    seq: int,
+    speaker: str = "agent",
+    text: str = "Hello.",
+) -> TranscriptUtterance:
+    return TranscriptUtterance(
+        id=uuid.uuid4(),
+        call_session_id=call_session_id,
+        speaker=speaker,
+        text=text,
+        sequence_number=seq,
+        is_final=True,
+        created_at=datetime.now(timezone.utc),
+    )
+
+
+@pytest.mark.asyncio
+async def test_get_transcript_returns_utterances(
+    monkeypatch: pytest.MonkeyPatch,
+    client: AsyncClient,
+) -> None:
+    user = build_user()
+    call_id = uuid.uuid4()
+
+    utts = [
+        _make_utterance(call_id, 0, "agent", "Hi."),
+        _make_utterance(call_id, 1, "prospect", "Hello."),
+    ]
+
+    async def fake_transcript(
+        *_a: object, **_kw: object,
+    ) -> list[TranscriptUtterance]:
+        return utts
+
+    monkeypatch.setattr(
+        call_svc, 'get_call_transcript', fake_transcript,
+    )
+
+    async def _user() -> User:
+        return user
+
+    app.dependency_overrides[get_current_user] = _user
+    app.dependency_overrides[get_db_session] = override_db
+
+    response = await client.get(f'/api/calls/{call_id}/transcript')
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    assert data[0]['speaker'] == 'agent'
+    assert data[1]['speaker'] == 'prospect'
+    assert data[0]['sequence_number'] == 0
+
+
+@pytest.mark.asyncio
+async def test_get_transcript_empty(
+    monkeypatch: pytest.MonkeyPatch,
+    client: AsyncClient,
+) -> None:
+    user = build_user()
+
+    async def fake_transcript(
+        *_a: object, **_kw: object,
+    ) -> list[TranscriptUtterance]:
+        return []
+
+    monkeypatch.setattr(
+        call_svc, 'get_call_transcript', fake_transcript,
+    )
+
+    async def _user() -> User:
+        return user
+
+    app.dependency_overrides[get_current_user] = _user
+    app.dependency_overrides[get_db_session] = override_db
+
+    response = await client.get(
+        f'/api/calls/{uuid.uuid4()}/transcript',
+    )
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+# --- Timeline endpoint ---
+
+
+def _make_event(
+    call_session_id: uuid.UUID,
+    event_type: str = "call.initiated",
+) -> CallEvent:
+    return CallEvent(
+        id=uuid.uuid4(),
+        call_session_id=call_session_id,
+        event_type=event_type,
+        event_timestamp=datetime.now(timezone.utc),
+        created_at=datetime.now(timezone.utc),
+    )
+
+
+@pytest.mark.asyncio
+async def test_get_timeline_returns_events(
+    monkeypatch: pytest.MonkeyPatch,
+    client: AsyncClient,
+) -> None:
+    user = build_user()
+    call_id = uuid.uuid4()
+
+    events = [
+        _make_event(call_id, "call.initiated"),
+        _make_event(call_id, "call.completed"),
+    ]
+
+    async def fake_timeline(
+        *_a: object, **_kw: object,
+    ) -> list[CallEvent]:
+        return events
+
+    monkeypatch.setattr(
+        call_svc, 'get_call_timeline', fake_timeline,
+    )
+
+    async def _user() -> User:
+        return user
+
+    app.dependency_overrides[get_current_user] = _user
+    app.dependency_overrides[get_db_session] = override_db
+
+    response = await client.get(f'/api/calls/{call_id}/timeline')
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    assert data[0]['event_type'] == 'call.initiated'
+    assert data[1]['event_type'] == 'call.completed'
