@@ -14,11 +14,11 @@ from app.services.realtime.pubsub import (
 
 
 def test_deal_channel_format() -> None:
-    assert deal_channel("abc") == "dealgraph:realtime:deal:abc"
+    assert deal_channel("abc") == "signal_layer:realtime:deal:abc"
 
 
 def test_call_channel_format() -> None:
-    assert call_channel("xyz") == "dealgraph:realtime:call:xyz"
+    assert call_channel("xyz") == "signal_layer:realtime:call:xyz"
 
 
 @pytest.mark.asyncio

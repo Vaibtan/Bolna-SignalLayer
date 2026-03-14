@@ -67,7 +67,7 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str
     REDIS_URL: str
-    REDIS_RATE_LIMIT_PREFIX: str = 'dealgraph:ratelimit'
+    REDIS_RATE_LIMIT_PREFIX: str = 'signal_layer:ratelimit'
     JWT_SECRET: str
 
     AUTH_MAX_FAILED_ATTEMPTS: int = 5

@@ -30,7 +30,7 @@ def pytest_configure(config: pytest.Config) -> None:
     import os
 
     os.environ["DATABASE_URL"] = (
-        "postgresql+asyncpg://postgres:postgres@localhost:5432/dealgraph_test"
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/signal_layer_test"
     )
     os.environ["REDIS_URL"] = "redis://localhost:6379/1"
     os.environ["JWT_SECRET"] = "testsecret"

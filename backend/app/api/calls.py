@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
-from app.core.exceptions import DealGraphError
+from app.core.exceptions import SignalLayerError
 from app.core.redis import get_redis_client
 from app.db.session import get_db_session
 from app.models.user import User
@@ -58,7 +58,7 @@ async def initiate_call(
     await db.commit()
 
     if session.status == "failed":
-        raise DealGraphError(
+        raise SignalLayerError(
             "Call provider could not place the call.",
             status_code=502,
         )

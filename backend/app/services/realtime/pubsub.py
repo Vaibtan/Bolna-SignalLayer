@@ -10,7 +10,7 @@ from app.core.redis import get_redis_client
 
 logger = structlog.get_logger(__name__)
 
-_CHANNEL_PREFIX = "dealgraph:realtime"
+_CHANNEL_PREFIX = "signal_layer:realtime"
 
 
 def deal_channel(deal_id: str) -> str:

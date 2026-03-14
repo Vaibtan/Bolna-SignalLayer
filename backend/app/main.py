@@ -1,4 +1,4 @@
-"""FastAPI application entrypoint for the DealGraph backend."""
+"""FastAPI application entrypoint for the Signal Layer OS backend."""
 
 import os
 from collections.abc import AsyncIterator
@@ -20,9 +20,9 @@ from app.api.webhooks import router as webhooks_router
 from app.api.ws import router as ws_router
 from app.core.config import get_settings
 from app.core.exceptions import (
-    DealGraphError,
-    dealgraph_exception_handler,
+    SignalLayerError,
     global_exception_handler,
+    signal_layer_exception_handler,
 )
 from app.core.logging import (
     request_context_middleware,
@@ -60,7 +60,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title='DealGraph Voice OS',
+    title='Signal Layer OS',
     description='Enterprise Voice AI and revenue intelligence platform.',
     version='1.0.0',
     lifespan=lifespan,
@@ -77,8 +77,8 @@ app.middleware('http')(request_context_middleware)
 
 app.add_exception_handler(Exception, global_exception_handler)
 app.add_exception_handler(
-    DealGraphError,
-    cast(ExceptionHandler, dealgraph_exception_handler),
+    SignalLayerError,
+    cast(ExceptionHandler, signal_layer_exception_handler),
 )
 
 app.include_router(auth_router)

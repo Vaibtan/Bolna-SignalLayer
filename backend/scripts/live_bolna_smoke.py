@@ -53,7 +53,7 @@ async def _main() -> int:
             user_data={
                 "stakeholder_name": "Smoke Test Contact",
                 "stakeholder_title": "Test Contact",
-                "company_name": "DealGraph Smoke Test",
+                "company_name": "Signal Layer OS Smoke Test",
                 "deal_context": (
                     "This is a manual smoke test call to validate the live "
                     "Bolna integration and webhook flow."

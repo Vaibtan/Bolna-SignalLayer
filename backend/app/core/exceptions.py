@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 logger = structlog.get_logger(__name__)
 
 
-class DealGraphError(Exception):
+class SignalLayerError(Exception):
     """Base exception type for handled application errors."""
 
     def __init__(
@@ -20,28 +20,28 @@ class DealGraphError(Exception):
         super().__init__(message)
 
 
-class AuthenticationError(DealGraphError):
+class AuthenticationError(SignalLayerError):
     """Raised when authentication fails."""
 
     def __init__(self, message: str = "Authentication failed.") -> None:
         super().__init__(message, status.HTTP_401_UNAUTHORIZED)
 
 
-class AuthorizationError(DealGraphError):
+class AuthorizationError(SignalLayerError):
     """Raised when an authenticated user lacks required permissions."""
 
     def __init__(self, message: str = "Forbidden.") -> None:
         super().__init__(message, status.HTTP_403_FORBIDDEN)
 
 
-class NotFoundError(DealGraphError):
+class NotFoundError(SignalLayerError):
     """Raised when a requested resource does not exist."""
 
     def __init__(self, message: str = "Resource not found.") -> None:
         super().__init__(message, status.HTTP_404_NOT_FOUND)
 
 
-class RateLimitError(DealGraphError):
+class RateLimitError(SignalLayerError):
     """Raised when a client exceeds the allowed request rate."""
 
     def __init__(self, retry_after: int = 60) -> None:
@@ -70,9 +70,9 @@ async def global_exception_handler(
     )
 
 
-async def dealgraph_exception_handler(
+async def signal_layer_exception_handler(
     request: Request,
-    exc: DealGraphError,
+    exc: SignalLayerError,
 ) -> JSONResponse:
     """Handle expected application errors."""
     logger.info(

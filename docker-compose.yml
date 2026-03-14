@@ -19,7 +19,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/dealgraph
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/signal_layer
       - REDIS_URL=redis://redis:6379/0
     env_file:
       - .env
@@ -35,7 +35,7 @@ services:
       target: runner
     command: ["python", "-m", "app.workers.run"]
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/dealgraph
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/signal_layer
       - REDIS_URL=redis://redis:6379/0
     env_file:
       - .env
@@ -51,7 +51,7 @@ services:
       target: runner
     command: ["python", "-m", "app.workers.maintenance"]
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/dealgraph
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/signal_layer
       - REDIS_URL=redis://redis:6379/0
     env_file:
       - .env
@@ -64,7 +64,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: dealgraph
+      POSTGRES_DB: signal_layer
     ports:
       - "5433:5432"
     volumes:

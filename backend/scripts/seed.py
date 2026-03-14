@@ -16,9 +16,9 @@ from app.models.org import Organization
 from app.models.stakeholder import Stakeholder
 from app.models.user import User
 
-ADMIN_EMAIL = "admin@dealgraph.dev"
+ADMIN_EMAIL = "admin@signallayer.dev"
 ADMIN_PASSWORD = "changeme123"
-ORG_NAME = "DealGraph Demo Org"
+ORG_NAME = "Signal Layer OS Demo Org"
 DEMO_DEAL_NAME = "Acme Corp Enterprise License"
 SEED_LOCK_KEY = 662311903914221
 

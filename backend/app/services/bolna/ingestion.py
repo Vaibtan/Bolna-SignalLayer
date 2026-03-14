@@ -76,7 +76,7 @@ def _derive_idempotency_key(
     Prefer an explicit event ID.  Fall back to
     execution_id + status + sha256(payload).
     """
-    base = "dealgraph:webhook:bolna"
+    base = "signal_layer:webhook:bolna"
 
     event_id = payload.get("event_id") or payload.get("id")
     if event_id:

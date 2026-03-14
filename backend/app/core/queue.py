@@ -49,7 +49,7 @@ class DeadLetterMiddleware(dramatiq.Middleware):
     inspection and replay via admin tooling.
     """
 
-    _DLQ_KEY = "dealgraph:dead_letter_queue"
+    _DLQ_KEY = "signal_layer:dead_letter_queue"
 
     def after_skip_message(
         self,

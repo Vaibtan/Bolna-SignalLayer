@@ -1,4 +1,4 @@
-# DealGraph Voice OS
+# Signal Layer OS
 ## Implementation Plan
 
 **Derived from:** [PRD.md](D:/SWE_DEV_NEW/Bolna-SignalLayer/PRD.md)

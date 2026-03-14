@@ -45,7 +45,7 @@ export default function NewDealPage() {
         className='w-full max-w-md rounded-2xl border border-white/60 bg-white/80 p-8 shadow-xl backdrop-blur'
       >
         <p className='text-sm font-semibold uppercase tracking-[0.24em] text-orange-600'>
-          DealGraph Voice OS
+          Signal Layer OS
         </p>
         <h1 className='mt-2 text-2xl font-semibold text-slate-950'>
           Create Deal

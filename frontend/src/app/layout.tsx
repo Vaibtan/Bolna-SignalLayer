@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'DealGraph Voice OS',
+  title: 'Signal Layer OS',
   description:
     'Outbound voice intelligence platform for call execution, analysis, and risk review.',
 };

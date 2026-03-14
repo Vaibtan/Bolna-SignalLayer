@@ -219,7 +219,7 @@ async def test_user_rate_limited_via_atomic_incr() -> None:
 
     user_id = uuid.uuid4()
     # Pre-fill at the limit; INCR will push it to 4 > 3.
-    key = f"dealgraph:ratelimit:call_init:user:{user_id}"
+    key = f"signal_layer:ratelimit:call_init:user:{user_id}"
     redis.store[key] = "3"
     redis.ttls[key] = 120
 
@@ -248,7 +248,7 @@ async def test_stakeholder_cooldown_via_setnx() -> None:
 
     # Pre-fill the stakeholder cooldown key.
     key = (
-        f"dealgraph:ratelimit"
+        f"signal_layer:ratelimit"
         f":call_init:stakeholder:{stakeholder.id}"
     )
     redis.store[key] = "1"
@@ -342,10 +342,10 @@ async def test_success_records_rate_limit_slots() -> None:
     )
 
     user_key = (
-        f"dealgraph:ratelimit:call_init:user:{user_id}"
+        f"signal_layer:ratelimit:call_init:user:{user_id}"
     )
     sh_key = (
-        f"dealgraph:ratelimit"
+        f"signal_layer:ratelimit"
         f":call_init:stakeholder:{stakeholder.id}"
     )
     assert user_key in redis.store
@@ -362,7 +362,7 @@ async def test_stakeholder_rate_limit_releases_user_slot() -> None:
     user_id = uuid.uuid4()
 
     sh_key = (
-        f"dealgraph:ratelimit"
+        f"signal_layer:ratelimit"
         f":call_init:stakeholder:{stakeholder.id}"
     )
     redis.store[sh_key] = "1"
@@ -383,7 +383,7 @@ async def test_stakeholder_rate_limit_releases_user_slot() -> None:
         )
 
     user_key = (
-        f"dealgraph:ratelimit:call_init:user:{user_id}"
+        f"signal_layer:ratelimit:call_init:user:{user_id}"
     )
     assert user_key not in redis.store
 

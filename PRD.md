@@ -1,4 +1,4 @@
-# DealGraph Voice OS
+# Signal Layer OS
 ## Product Requirements Document (PRD)
 
 **Version:** v1.2
@@ -13,7 +13,7 @@
 
 ## 1. Executive Summary
 
-DealGraph Voice OS is a voice-native revenue intelligence system for complex B2B sales. It uses autonomous voice interactions to engage stakeholders, captures structured signals from conversations, maintains evolving deal memory across calls, detects risk, and recommends the next best action to move a deal forward.
+Signal Layer OS is a voice-native revenue intelligence system for complex B2B sales. It uses autonomous voice interactions to engage stakeholders, captures structured signals from conversations, maintains evolving deal memory across calls, detects risk, and recommends the next best action to move a deal forward.
 
 The product thesis is that the lasting value is not the phone call itself. The lasting value is the structured, inspectable, evidence-linked deal memory created from those calls.
 
@@ -93,7 +93,7 @@ Common failure modes:
 
 Existing AI SDR products often optimize for top-of-funnel activity. They do not deeply model the state of a complex deal across multiple stakeholders and multiple interactions.
 
-DealGraph Voice OS addresses this by making every important conversational signal structured, versioned, evidence-linked, and reusable.
+Signal Layer OS addresses this by making every important conversational signal structured, versioned, evidence-linked, and reusable.
 
 ---
 
@@ -492,7 +492,7 @@ Polling strategy for V1:
 Webhook idempotency for V1:
 
 - Each incoming webhook must be checked against a Redis idempotency key with a 24-hour TTL
-- Preferred key format: `dealgraph:webhook:bolna:{provider_event_id}`
+- Preferred key format: `signal_layer:webhook:bolna:{provider_event_id}`
 - If Bolna does not provide a stable event ID, derive the key from execution ID, terminal status, and a payload hash
 - Duplicate webhook deliveries must be acknowledged safely without re-running downstream processing
 
@@ -523,7 +523,7 @@ Constraints:
 
 #### 13.3.1 Agent specification
 
-- **Agent name:** DealGraph Discovery Agent
+- **Agent name:** Signal Layer Discovery Agent
 - **LLM on Bolna:** GPT-4o (via Bolna's platform LLM selection)
 - **TTS voice:** ElevenLabs, professional voice (e.g., "Rachel" or equivalent business-appropriate voice)
 - **STT:** Bolna default (Deepgram)
@@ -532,7 +532,7 @@ Constraints:
 #### 13.3.2 Welcome message template
 
 ```
-Hello {stakeholder_name}, this is the DealGraph assistant calling on behalf of the {company_name} engagement team. I'm reaching out regarding your {deal_context_brief}. Do you have a few minutes to discuss?
+Hello {stakeholder_name}, this is the Signal Layer assistant calling on behalf of the {company_name} engagement team. I'm reaching out regarding your {deal_context_brief}. Do you have a few minutes to discuss?
 ```
 
 Variables `{stakeholder_name}`, `{company_name}`, and `{deal_context_brief}` are populated from `user_data` at call time.
@@ -540,7 +540,7 @@ Variables `{stakeholder_name}`, `{company_name}`, and `{deal_context_brief}` are
 #### 13.3.3 Agent system prompt
 
 ```
-You are a professional B2B sales intelligence analyst conducting a structured phone conversation. You work for the DealGraph platform.
+You are a professional B2B sales intelligence analyst conducting a structured phone conversation. You work for the Signal Layer OS platform.
 
 ## Your Identity
 - You are polite, concise, and professional.
@@ -637,7 +637,7 @@ This `user_data` is sent in the Bolna API call request body. The agent's system 
 Step-by-step setup:
 1. Log in to Bolna dashboard (https://app.bolna.ai)
 2. Navigate to "Agents" → "Create Agent"
-3. Set agent name: "DealGraph Discovery Agent"
+3. Set agent name: "Signal Layer Discovery Agent"
 4. Select LLM provider: OpenAI, model: GPT-4o
 5. Select TTS provider: ElevenLabs, choose a professional voice
 6. Paste the system prompt from Section 13.3.3 into the agent prompt field
@@ -1892,11 +1892,11 @@ LLM_MAX_CONCURRENT_REQUESTS=2
 LLM_VALIDATION_MAX_RETRIES=2
 
 # Database
-DATABASE_URL           # Postgres connection string (e.g., postgresql+asyncpg://user:pass@localhost:5432/dealgraph)
+DATABASE_URL           # Postgres connection string (e.g., postgresql+asyncpg://user:pass@localhost:5432/signal_layer)
 
 # Redis
 REDIS_URL              # Redis connection string (e.g., redis://localhost:6379/0)
-REDIS_RATE_LIMIT_PREFIX=dealgraph:ratelimit
+REDIS_RATE_LIMIT_PREFIX=signal_layer:ratelimit
 
 # Auth
 JWT_SECRET             # For auth token signing (generate a strong random value)

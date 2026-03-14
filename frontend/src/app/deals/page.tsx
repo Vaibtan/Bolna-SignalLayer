@@ -38,7 +38,7 @@ export default function DealsPage() {
         <div className='flex items-center justify-between'>
           <div>
             <p className='text-sm font-semibold uppercase tracking-[0.24em] text-orange-600'>
-              DealGraph Voice OS
+              Signal Layer OS
             </p>
             <h1 className='mt-1 text-3xl font-semibold text-slate-950'>
               Deals

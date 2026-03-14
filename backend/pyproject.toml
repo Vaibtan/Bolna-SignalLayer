@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "backend"
 version = "0.1.0"
-description = "DealGraph Voice OS backend services and worker runtime."
+description = "Signal Layer OS backend services and worker runtime."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

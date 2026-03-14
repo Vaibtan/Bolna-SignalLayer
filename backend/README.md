@@ -1,7 +1,7 @@
 ## Backend
 
 FastAPI API, SQLAlchemy async data access, and Dramatiq worker runtime for
-DealGraph Voice OS.
+Signal Layer OS.
 
 ### Local setup
 
